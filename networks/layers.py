@@ -4,59 +4,6 @@ from tensorflow.keras.layers import Layer, Add, Dense, Conv2D
 from tensorflow.keras import backend
 
 
-class DenseEQL(Dense):
-    """ Dense layer with equalized learning rate. """
-    def __init__(self, **kwargs):
-        if 'kernel_initializer' in kwargs:
-            raise Exception("Cannot override kernel initializer.")
-        super().__init__(kernel_initializer=RandomNormal(), **kwargs)
-
-    def build(self, input_shape):
-        super().build(input_shape)
-        n_inputs = np.product([int(val) for val in input_shape[1:]])
-        self.c = np.sqrt(2) / np.sqrt(n_inputs)
-
-    def call(self, inputs):
-        output = backend.dot(inputs, self.kernel * self.c)
-        if self.use_bias:
-            output = backend.bias_add(output, self.bias, data_format='channels_last')
-        if self.activation is not None:
-            output = self.activation(output)
-        return output
-
-
-class Conv2DEQL(Conv2D):
-    """ Convolutional layer with equalized learning rate. """
-    def __init__(self, **kwargs):
-        if 'kernel_initializer' in kwargs:
-            raise Exception("Cannot override kernel initializer.")
-        super().__init__(kernel_initializer=RandomNormal(), **kwargs)
-
-    def build(self, input_shape):
-        super().build(input_shape)
-        n_inputs = np.product([int(val) for val in input_shape[1:]])
-        self.c = np.sqrt(2.0) / np.sqrt(n_inputs)
-
-    def call(self, inputs):
-        if self.rank == 2:
-            outputs = backend.conv2d(
-                inputs,
-                self.kernel * self.c,
-                strides=self.strides,
-                padding=self.padding,
-                data_format=self.data_format,
-                dilation_rate=self.dilation_rate
-            )
-        if self.use_bias:
-            outputs = backend.bias_add(
-                outputs,
-                self.bias,
-                data_format=self.data_format
-            )
-        if self.activation is not None:
-            return self.activation(outputs)
-
-
 class PixelNormalization(Layer):
     """ Normalizes a tensor using a per-channel mean deviation. """
     def __init__(self, **kwargs):

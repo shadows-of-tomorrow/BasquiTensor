@@ -16,6 +16,8 @@ class GANTrainer:
         self.n_epochs = n_epochs
 
     def execute(self, discriminators, generators, composites):
+        assert len(discriminators) == len(generators) == len(composites)
+        assert len(discriminators) == len(self.n_batches) == len(self.n_epochs)
         print(f"Training model at 4x4 resolution!")
         # 1. Extract initial models.
         init_discriminator = discriminators[0][0]

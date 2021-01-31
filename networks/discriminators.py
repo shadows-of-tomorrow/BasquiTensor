@@ -14,7 +14,7 @@ class DiscriminatorCreator:
         self.skip_layers = skip_layers
         self.input_res = input_res
         self.output_res = output_res
-        self.base_filters = int(2 ** 10)
+        self.base_filters = int(2 ** 8)
         self.max_filters = max_filters
         self.n_blocks = int(np.log2(output_res/input_res)+1)
         self.kernel_init = RandomNormal(stddev=0.02)
@@ -90,7 +90,7 @@ class DiscriminatorCreator:
         # 1. Add pooling layer to downscale image resolution (0.50x).
         x = AveragePooling2D()(input_layer)
         # 2. Add fromRGB layer.
-        x = self._add_from_rgb_layer(x, self._number_of_filters(stage))
+        x = self._add_from_rgb_layer(x, self._number_of_filters(stage-1))
         return x
 
     def _add_new_block(self, input_layer, stage):
@@ -137,6 +137,8 @@ class Discriminator(Model):
     """ Wraps keras model to incorporate gradient penalty. """
     def __init__(self, *args, **kwargs):
         super(Discriminator, self).__init__(*args, **kwargs)
+        self.gp_weight = 10.0
+        self.dp_weight = 0.001
 
     def compile(self, optimizer):
         super(Discriminator, self).compile(optimizer=optimizer)
@@ -149,9 +151,9 @@ class Discriminator(Model):
             d_loss_real = tf.reduce_mean(y_real)
             d_loss_fake = -tf.reduce_mean(y_fake)
             d_loss = d_loss_fake + d_loss_real
-            gp_loss = 10.0 * self._gradient_penalty(x_real, x_fake, batch_size)
+            gp_loss = self.gp_weight * self._gradient_penalty(x_real, x_fake, batch_size)
             d_loss += gp_loss
-            dp_loss = 0.001 * tf.reduce_mean(tf.square(y_real))
+            dp_loss = self.dp_weight * tf.reduce_mean(tf.square(y_real))
             d_loss += dp_loss
         gradient = tape.gradient(d_loss, self.variables)
         self.optimizer.apply_gradients(zip(gradient, self.variables))
