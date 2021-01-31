@@ -71,16 +71,22 @@ class GANTrainer:
             x_real, y_real = generate_real_samples(self.image_provider, n_batch, shape)
             x_fake, y_fake = generate_fake_samples(generator, self.latent_dim, n_batch)
             # 3.3 Train discriminator on real and fake examples.
-            d_loss_real = discriminator.train_on_batch(x_real, y_real)
-            d_loss_fake = discriminator.train_on_batch(x_fake, y_fake)
+            d_loss_real, d_loss_fake, gp_loss, dp_loss = discriminator.train_on_batch(x_real, x_fake)
             # 3.4 Train generator on discriminator score.
-            z = generate_latent_points(self.latent_dim, n_batch)
-            g_loss = composite.train_on_batch(z, y_real)
+            z_latent = generate_latent_points(self.latent_dim, n_batch)
+            g_loss = composite.train_on_batch(z_latent, y_real)
             # 3.5 Monitor progress.
             if i % 100 == 0 or i == (n_steps-i):
-                print(f"d_loss_real: {round(d_loss_real,3)}, "
-                      f"d_loss_fake: {round(d_loss_fake,3)}, "
-                      f"g_loss: {round(g_loss,3)}")
+                d_loss_real = int(d_loss_real * 1000) / 1000
+                d_loss_fake = int(d_loss_fake * 1000) / 1000
+                gp_loss = int(gp_loss * 1000) / 1000
+                dp_loss = int(dp_loss * 1000) / 1000
+                g_loss = int(g_loss * 1000) / 1000
+                print(f"d_loss_real: {d_loss_real}, "
+                      f"d_loss_fake: {d_loss_fake}, "
+                      f"gp_loss: {gp_loss}, "
+                      f"dp_loss: {dp_loss}, "
+                      f"g_loss: {g_loss}")
                 store_plots(
                     generator=generator,
                     latent_dim=self.latent_dim,

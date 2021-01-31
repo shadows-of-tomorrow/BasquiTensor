@@ -3,21 +3,20 @@ from networks.layers import PixelNormalization, WeightedSum
 from tensorflow.keras.layers import Input, Reshape
 from tensorflow.keras.layers import LeakyReLU, UpSampling2D, Dense, Conv2D
 from tensorflow.keras.models import Model
-from tensorflow.keras.constraints import max_norm
-from tensorflow.keras.initializers import HeNormal
+from tensorflow.keras.initializers import RandomNormal
 
 
 class GeneratorCreator:
     """ Creates a list of progressively growing generator models. """
-    def __init__(self, latent_dim=256, input_res=4, output_res=256, max_filters=512):
+    def __init__(self, latent_dim=128, input_res=4, output_res=128, max_filters=128):
         self.latent_dim = latent_dim
         self.input_res = input_res
         self.output_res = output_res
         self.base_filters = int(2 ** 10)
         self.max_filters = max_filters
         self.n_blocks = int(np.log2(output_res / input_res) + 1)
-        self.kernel_init = HeNormal()
-        self.kernel_const = max_norm(1.0)
+        self.kernel_init = RandomNormal(stddev=0.02)
+        self.kernel_const = None
 
     def execute(self):
         """ Executes the creation of a generator model list. """
@@ -43,7 +42,7 @@ class GeneratorCreator:
         upsampling_layer = UpSampling2D()(end_block_old)
         # 3. Construct "normal" generator.
         end_block_new = self._add_conv_blocks(upsampling_layer, filters)
-        output_layer_new = self._add_rgb_layer(end_block_new)
+        output_layer_new = self._to_rgb(end_block_new)
         next_model = Model(old_model.input, output_layer_new)
         # 4. Construct "fade-in" generator.
         output_layer_old = old_model.layers[-1](upsampling_layer)
@@ -67,12 +66,12 @@ class GeneratorCreator:
         g = LeakyReLU(0.20)(g)
         g = PixelNormalization()(g)
         # 5. Add output (toRGB) layer.
-        output_layer = self._add_rgb_layer(g)
+        output_layer = self._to_rgb(g)
         # 6. Properly define model.
         init_model = Model(input_layer, output_layer)
         return [init_model, init_model]
 
-    def _add_rgb_layer(self, x):
+    def _to_rgb(self, x):
         """ Adds a (1x1) convolutional layer. """
         x = Conv2D(filters=3, kernel_size=(1, 1), padding='same',
                    kernel_initializer=self.kernel_init, kernel_constraint=self.kernel_const)(x)

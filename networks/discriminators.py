@@ -1,25 +1,24 @@
 import numpy as np
-from networks.loss_functions import wasserstein_loss_drift_penalty
+import tensorflow as tf
 from networks.layers import WeightedSum, MinibatchStDev
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input, LeakyReLU, Dense, Conv2D
 from tensorflow.keras.layers import AveragePooling2D, Flatten
-from tensorflow.keras.initializers import HeNormal
-from tensorflow.keras.constraints import max_norm
+from tensorflow.keras.initializers import RandomNormal
 
 
 class DiscriminatorCreator:
     """ Creates a list of progressively growing discriminator models. """
-    def __init__(self, skip_layers=2, input_res=4, output_res=256, max_filters=512):
+    def __init__(self, skip_layers=2, input_res=4, output_res=128, max_filters=128):
         self.skip_layers = skip_layers
         self.input_res = input_res
         self.output_res = output_res
         self.base_filters = int(2 ** 10)
         self.max_filters = max_filters
         self.n_blocks = int(np.log2(output_res/input_res)+1)
-        self.kernel_init = HeNormal()
-        self.kernel_const = max_norm(1.0)
+        self.kernel_init = RandomNormal(stddev=0.02)
+        self.kernel_const = None
 
     def execute(self):
         """ Executes the creation of a discriminator model list. """
@@ -50,8 +49,8 @@ class DiscriminatorCreator:
         d_next = self._add_old_layers(init_block_new, old_model)
         d_fade_in = self._add_old_layers(init_block_wsum, old_model)
         # 6. Properly define models.
-        next_model = Model(input_layer, d_next)
-        fade_in_model = Model(input_layer, d_fade_in)
+        next_model = Discriminator(inputs=input_layer, outputs=d_next)
+        fade_in_model = Discriminator(inputs=input_layer, outputs=d_fade_in)
         # 7. Compile models.
         self._compile_model(next_model)
         self._compile_model(fade_in_model)
@@ -74,10 +73,9 @@ class DiscriminatorCreator:
                    kernel_initializer=self.kernel_init, kernel_constraint=self.kernel_const)(x)
         # 6. Add final dense layer.
         x = Flatten()(x)
-        x = Dense(units=1,
-                  kernel_initializer=self.kernel_init, kernel_constraint=self.kernel_const)(x)
+        output_layer = Dense(units=1, kernel_initializer=self.kernel_init, kernel_constraint=self.kernel_const)(x)
         # 7. Properly define initial model.
-        init_model = Model(input_layer, x)
+        init_model = Discriminator(inputs=input_layer, outputs=output_layer)
         # 8. Compile initial model.
         self._compile_model(init_model)
         return [init_model, init_model]
@@ -115,25 +113,49 @@ class DiscriminatorCreator:
     @staticmethod
     def _double_input_res(old_model):
         """ Doubles the resolution of the input layer. """
-        new_res = (
-            old_model.input.shape[1] * 2,  # Double width.
-            old_model.input.shape[2] * 2,  # Double height.
-            old_model.input.shape[3],  # Same channels.
-        )
+        new_res = (old_model.input.shape[1] * 2, old_model.input.shape[2] * 2, old_model.input.shape[3])
         return Input(new_res)
 
     @staticmethod
     def _compile_model(model):
         """ Compiles a model using default settings. """
-        model.compile(
-            loss=wasserstein_loss_drift_penalty,
-            optimizer=Adam(
-                lr=0.001,
-                beta_1=0.00,
-                beta_2=0.99,
-                epsilon=10e-8
-            )
-        )
+        model.compile(optimizer=Adam(lr=0.001, beta_1=0.00, beta_2=0.99, epsilon=10e-8))
 
     def _number_of_filters(self, stage):
         return int(np.minimum(self.base_filters / (2**(stage+1)), self.max_filters))
+
+
+class Discriminator(Model):
+    """ Wraps keras model to incorporate gradient penalty. """
+    def __init__(self, *args, **kwargs):
+        super(Discriminator, self).__init__(*args, **kwargs)
+
+    def compile(self, optimizer):
+        super(Discriminator, self).compile(optimizer=optimizer)
+
+    def _gradient_penalty(self, x_real, x_fake, batch_size):
+        alpha = tf.random.uniform([batch_size, 1, 1, 1], 0.0, 1.0)
+        x_int = (1.0 - alpha) * x_real + alpha * x_fake
+        with tf.GradientTape() as tape:
+            tape.watch(x_int)
+            y_int = self(x_int, training=True)
+        gradient = tape.gradient(y_int, [x_int])[0]
+        gradient_norm = tf.sqrt(tf.reduce_sum(tf.square(gradient), axis=[1, 2, 3]))
+        gradient_penalty = tf.reduce_mean((gradient_norm - 1.0) ** 2)
+        return gradient_penalty
+
+    def train_on_batch(self, x_real, x_fake):
+        batch_size = x_real.shape[0]
+        with tf.GradientTape() as tape:
+            y_real = self(x_real, training=True)
+            y_fake = self(x_fake, training=True)
+            d_loss_real = tf.reduce_mean(y_real)
+            d_loss_fake = -tf.reduce_mean(y_fake)
+            d_loss = d_loss_fake + d_loss_real
+            gp_loss = 10.0 * self._gradient_penalty(x_real, x_fake, batch_size)
+            d_loss += gp_loss
+            dp_loss = 0.001 * tf.reduce_mean(tf.square(y_real))
+            d_loss += dp_loss
+        gradient = tape.gradient(d_loss, self.variables)
+        self.optimizer.apply_gradients(zip(gradient, self.variables))
+        return d_loss_real.numpy(), d_loss_fake.numpy(), gp_loss.numpy(), dp_loss.numpy()
