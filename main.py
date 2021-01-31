@@ -18,8 +18,8 @@ if __name__ == "__main__":
 
     # 3. Define training parameters.
     latent_dim = 128
-    n_batches = [16, 16, 16, 16, 16, 16, 16]
-    n_epochs = [1000, 1000, 1000, 1000, 1000, 1000, 1000]
+    n_batches = [16, 16, 16, 16, 16, 16]
+    n_epochs = [1000, 1000, 1000, 1000, 1000, 1000]
 
     # 4. Train networks.
     trainer = GANTrainer(latent_dim, image_provider, n_batches, n_epochs)

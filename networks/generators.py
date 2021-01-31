@@ -16,7 +16,6 @@ class GeneratorCreator:
         self.max_filters = max_filters
         self.n_blocks = int(np.log2(output_res / input_res) + 1)
         self.kernel_init = RandomNormal(stddev=0.02)
-        self.kernel_const = None
 
     def execute(self):
         """ Executes the creation of a generator model list. """
@@ -24,7 +23,7 @@ class GeneratorCreator:
         generators = []
         # 2. Construct and add initial discriminator.
         init_filters = self._number_of_filters(0)
-        init_models = self._construct_init_models(init_filters)
+        init_models = self._construct_initial_model(init_filters)
         generators.append(init_models)
         # 3. Construct and add next discriminator.
         for k in range(1, self.n_blocks):
@@ -41,8 +40,8 @@ class GeneratorCreator:
         # 2. Apply upsampling to the previous convolutional block.
         upsampling_layer = UpSampling2D()(end_block_old)
         # 3. Construct "normal" generator.
-        end_block_new = self._add_conv_blocks(upsampling_layer, filters)
-        output_layer_new = self._to_rgb(end_block_new)
+        end_block_new = self._add_convolutional_layers(upsampling_layer, filters, 2)
+        output_layer_new = self._add_to_rgb_layer(end_block_new)
         next_model = Model(old_model.input, output_layer_new)
         # 4. Construct "fade-in" generator.
         output_layer_old = old_model.layers[-1](upsampling_layer)
@@ -50,38 +49,37 @@ class GeneratorCreator:
         fade_in_model = Model(old_model.input, output_layer_wsum)
         return [next_model, fade_in_model]
 
-    def _construct_init_models(self, filters):
+    def _construct_initial_model(self, filters):
         """ Constructs the initial generator handling a 4x4 resolution. """
         # 1. Construct input layer.
         input_layer = Input(shape=(self.latent_dim,))
         # 2. Map latent space to feature maps aka "(4x4) convolutional layer".
-        g = Dense(units=self.input_res * self.input_res * filters,
-                  kernel_initializer=self.kernel_init, kernel_constraint=self.kernel_const)(input_layer)
-        g = Reshape(target_shape=(self.input_res, self.input_res, filters))(g)
-        g = LeakyReLU(0.20)(g)
-        g = PixelNormalization()(g)
-        # 4. Add (3x3) convolutional layer.
-        g = Conv2D(filters=filters, kernel_size=(3, 3), padding='same',
-                   kernel_initializer=self.kernel_init, kernel_constraint=self.kernel_const)(g)
-        g = LeakyReLU(0.20)(g)
-        g = PixelNormalization()(g)
-        # 5. Add output (toRGB) layer.
-        output_layer = self._to_rgb(g)
-        # 6. Properly define model.
-        init_model = Model(input_layer, output_layer)
-        return [init_model, init_model]
+        x = self._add_latent_mapping_layer(input_layer, filters)
+        # 4. Add a (3x3) convolutional layer.
+        x = self._add_convolutional_layers(x, filters, 1)
+        # 5. Add toRGB layer.
+        output_layer = self._add_to_rgb_layer(x)
+        # 6. Construct Keras model.
+        initial_model = Model(input_layer, output_layer)
+        return [initial_model, initial_model]
 
-    def _to_rgb(self, x):
-        """ Adds a (1x1) convolutional layer. """
-        x = Conv2D(filters=3, kernel_size=(1, 1), padding='same',
-                   kernel_initializer=self.kernel_init, kernel_constraint=self.kernel_const)(x)
+    def _add_latent_mapping_layer(self, x, filters):
+        """ Maps the latent space to feature maps aka (4x4) convolutional layer. """
+        x = Dense(units=self.input_res * self.input_res * filters, kernel_initializer=self.kernel_init)(x)
+        x = Reshape(target_shape=(self.input_res, self.input_res, filters))(x)
+        x = LeakyReLU(0.20)(x)
+        x = PixelNormalization()(x)
         return x
 
-    def _add_conv_blocks(self, x, filters):
+    def _add_to_rgb_layer(self, x):
+        """ Adds a (1x1) convolutional layer to generate an RGB image. """
+        x = Conv2D(filters=3, kernel_size=(1, 1), padding='same', kernel_initializer=self.kernel_init)(x)
+        return x
+
+    def _add_convolutional_layers(self, x, filters, n_layers):
         """ Adds two (3x3) convolutional layers. """
-        for _ in range(2):
-            x = Conv2D(filters=filters, kernel_size=(3, 3), padding='same',
-                       kernel_initializer=self.kernel_init, kernel_constraint=self.kernel_const)(x)
+        for _ in range(n_layers):
+            x = Conv2D(filters=filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
             x = LeakyReLU(0.20)(x)
             x = PixelNormalization()(x)
         return x
