@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from networks.layers import WeightedSum, MinibatchStDev
+from construction.custom_layers import WeightedSum, MinibatchStDev
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input, LeakyReLU, Dense, Conv2D
@@ -8,13 +8,13 @@ from tensorflow.keras.layers import AveragePooling2D, Flatten
 from tensorflow.keras.initializers import RandomNormal
 
 
-class DiscriminatorCreator:
+class DiscriminatorConstructor:
     """ Creates a list of progressively growing discriminator models. """
     def __init__(self, skip_layers=3, input_res=4, output_res=128, max_filters=128):
         self.skip_layers = skip_layers
         self.input_res = input_res
         self.output_res = output_res
-        self.base_filters = int(2 ** 8)
+        self.base_filters = int(2 ** 10)
         self.max_filters = max_filters
         self.n_blocks = int(np.log2(output_res/input_res)+1)
         self.kernel_init = RandomNormal(stddev=0.02)
@@ -157,7 +157,11 @@ class Discriminator(Model):
             d_loss += dp_loss
         gradient = tape.gradient(d_loss, self.variables)
         self.optimizer.apply_gradients(zip(gradient, self.variables))
-        return d_loss_real.numpy(), d_loss_fake.numpy(), gp_loss.numpy(), dp_loss.numpy()
+        loss_dict = {"d_loss_real": d_loss_real.numpy(),
+                     "d_loss_fake": d_loss_fake.numpy(),
+                     "gp_loss": gp_loss.numpy(),
+                     "dp_loss": dp_loss.numpy()}
+        return loss_dict
 
     def _gradient_penalty(self, x_real, x_fake, batch_size):
         alpha = tf.random.uniform([batch_size, 1, 1, 1], 0.0, 1.0)

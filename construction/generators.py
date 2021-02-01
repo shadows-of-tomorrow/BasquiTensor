@@ -1,24 +1,24 @@
 import numpy as np
-from networks.layers import PixelNormalization, WeightedSum
+from construction.custom_layers import PixelNormalization, WeightedSum
 from tensorflow.keras.layers import Input, Reshape
 from tensorflow.keras.layers import LeakyReLU, UpSampling2D, Dense, Conv2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import RandomNormal
 
 
-class GeneratorCreator:
-    """ Creates a list of progressively growing generator models. """
+class GeneratorConstructor:
+    """ Constructs a list of progressively growing generator models. """
     def __init__(self, latent_dim=128, input_res=4, output_res=128, max_filters=128):
         self.latent_dim = latent_dim
         self.input_res = input_res
         self.output_res = output_res
-        self.base_filters = int(2 ** 8)
+        self.base_filters = int(2 ** 10)
         self.max_filters = max_filters
         self.n_blocks = int(np.log2(output_res / input_res) + 1)
         self.kernel_init = RandomNormal(stddev=0.02)
 
     def execute(self):
-        """ Executes the creation of a generator model list. """
+        """ Executes the construction of a generator model list. """
         # 1. Initialize list of discriminators.
         generators = []
         # 2. Construct and add initial discriminator.

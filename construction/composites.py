@@ -1,9 +1,9 @@
-from networks.loss_functions import wasserstein_loss
+from construction.loss_functions import wasserstein_loss
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 
 
-class CompositeCreator:
+class CompositeConstructor:
     """ Creates a list of progressively growing composites. """
     def __init__(self, init=True):
         self.init = init

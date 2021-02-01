@@ -4,15 +4,12 @@ import numpy as np
 from PIL import Image
 
 
-class ImageProvider:
-    """ This class handles the reading and processing of images. """
-    def __init__(self,
-                 dir_in: str,
-                 x_range=(0, 255),
-                 y_range=(-1, 1)):
-        # Assign fields to class.
+class ImageProcessor:
+    """ Handles the reading and processing of images. """
+    def __init__(self, dir_in, dir_out, x_range=(0, 255), y_range=(-1, 1)):
         self.dir_in = dir_in
-        self.file_names = os.listdir(dir_in)
+        self.dir_out = dir_out
+        self.file_names = os.listdir(self.dir_in)
         self.x_range = x_range
         self.y_range = y_range
         self.a, self.b = self.calc_shift_coeff(self.x_range, self.y_range)
