@@ -86,4 +86,4 @@ class NetworkTrainer:
             if k % 100 == 0:
                 loss_dict = {**d_loss, **{'g_loss': g_loss}}
                 self.monitor.print_losses(shape[0], **loss_dict)
-                self.monitor.store_plots(generator, k, fade_in)
+                self.monitor.store_plots(generator, n_batch * k, fade_in)

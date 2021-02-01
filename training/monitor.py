@@ -18,7 +18,10 @@ class Monitor:
         for key, value in losses.items():
             value = value * self.loss_scaling
             value = int(value * self.loss_rounding) / self.loss_rounding
-            message += f"{key}: {value}, "
+            if value < 0:
+                message += f"{key}: {-value} (-), "
+            else:
+                message += f"{key}: {value} (+), "
         print(message)
 
     def store_plots(self, generator, step, fade_in):
