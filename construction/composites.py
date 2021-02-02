@@ -8,7 +8,7 @@ class CompositeConstructor:
     def __init__(self, init=True):
         self.init = init
 
-    def execute(self, discriminators, generators):
+    def run(self, discriminators, generators):
         assert len(discriminators) == len(generators)
         # 1. Initialize list of GANs.
         composites = []

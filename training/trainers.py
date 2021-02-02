@@ -2,7 +2,7 @@ from construction.utils import update_fade_in
 from construction.utils import generate_fake_samples
 from construction.utils import generate_real_samples
 from construction.utils import generate_latent_points
-from training.monitor import Monitor
+from training.monitors import Monitor
 
 
 class NetworkTrainer:
@@ -15,7 +15,7 @@ class NetworkTrainer:
         self.n_batches = training_config['n_batches']
         self.n_epochs = training_config['n_epochs']
 
-    def execute(self, networks):
+    def run(self, networks):
         # 0. Unpack networks.
         discriminators = networks['discriminators']
         generators = networks['generators']

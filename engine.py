@@ -3,7 +3,7 @@ from datetime import datetime
 from processing.configs import ConfigProcessor
 from processing.images import ImageProcessor
 from construction.networks import NetworkConstructor
-from training.networks import NetworkTrainer
+from training.trainers import NetworkTrainer
 
 
 class Engine:
@@ -11,7 +11,7 @@ class Engine:
     def __init__(self, run_id):
         self.run_id = run_id
         self.parent_dir = os.path.dirname(__file__)
-        self.config_dir = os.path.join(self.parent_dir, 'configs')
+        self.config_dir = os.path.join(self.parent_dir, 'config')
 
     def run(self):
         configs = self._read_config_files()
@@ -33,7 +33,7 @@ class Engine:
     def _construct_networks(configs):
         network_configs = [config['network_parameters'] for config in configs]
         network_constructors = [NetworkConstructor(**network_config) for network_config in network_configs]
-        networks_list = [network_constructor.execute() for network_constructor in network_constructors]
+        networks_list = [network_constructor.run() for network_constructor in network_constructors]
         return networks_list
 
     @staticmethod
@@ -46,10 +46,10 @@ class Engine:
     def _train_networks(networks, network_trainers):
         assert len(networks) == len(network_trainers)
         for k in range(len(network_trainers)):
-            network_trainers[k].execute(networks[k])
+            network_trainers[k].run(networks[k])
 
 
 if __name__ == "__main__":
-    time_stamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    engine = Engine(run_id=time_stamp)
+    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    engine = Engine(run_id=timestamp)
     engine.run()

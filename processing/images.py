@@ -40,9 +40,11 @@ class ImageProcessor:
         img = Image.open(dir_img)
         return np.asarray(img)
 
-    def shift_arr(self, arr):
-        """ Shifts an array from [x1, x2] to [y1, y2]. """
-        return (arr - self.a) / self.b
+    def shift_arr(self, arr, min_max=False):
+        if min_max is False:
+            return (arr - self.a) / self.b
+        else:
+            return (arr - arr.min()) / (arr.max() - arr.min())
 
     @staticmethod
     def calc_shift_coeff(x, y):

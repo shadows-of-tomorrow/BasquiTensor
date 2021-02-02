@@ -1,14 +1,14 @@
 import numpy as np
-from construction.custom_layers import PixelNormalization, WeightedSum
+from construction.custom_layers import PixelNormalization, WeightedSum, DenseEQL, Conv2DEQL
 from tensorflow.keras.layers import Input, Reshape
-from tensorflow.keras.layers import LeakyReLU, UpSampling2D, Dense, Conv2D
+from tensorflow.keras.layers import LeakyReLU, UpSampling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import RandomNormal
 
 
 class GeneratorConstructor:
     """ Constructs a list of progressively growing generator models. """
-    def __init__(self, latent_dim=128, input_res=4, output_res=128, max_filters=128):
+    def __init__(self, latent_dim=None, input_res=4, output_res=None, max_filters=None):
         self.latent_dim = latent_dim
         self.input_res = input_res
         self.output_res = output_res
@@ -17,7 +17,7 @@ class GeneratorConstructor:
         self.n_blocks = int(np.log2(output_res / input_res) + 1)
         self.kernel_init = RandomNormal(stddev=0.02)
 
-    def execute(self):
+    def run(self):
         """ Executes the construction of a generator model list. """
         # 1. Initialize list of discriminators.
         generators = []
@@ -53,8 +53,9 @@ class GeneratorConstructor:
         """ Constructs the initial generator handling a 4x4 resolution. """
         # 1. Construct input layer.
         input_layer = Input(shape=(self.latent_dim,))
+        x = PixelNormalization()(input_layer)
         # 2. Map latent space to feature maps aka "(4x4) convolutional layer".
-        x = self._add_latent_mapping_layer(input_layer, filters)
+        x = self._add_latent_mapping_layer(x, filters)
         # 4. Add a (3x3) convolutional layer.
         x = self._add_convolutional_layers(x, filters, 1)
         # 5. Add toRGB layer.
@@ -65,21 +66,23 @@ class GeneratorConstructor:
 
     def _add_latent_mapping_layer(self, x, filters):
         """ Maps the latent space to feature maps aka (4x4) convolutional layer. """
-        x = Dense(units=self.input_res * self.input_res * filters, kernel_initializer=self.kernel_init)(x)
+        x = DenseEQL(units=self.input_res*self.input_res*filters, gain=np.sqrt(2)/4)(x)
         x = Reshape(target_shape=(self.input_res, self.input_res, filters))(x)
         x = LeakyReLU(0.20)(x)
         x = PixelNormalization()(x)
         return x
 
-    def _add_to_rgb_layer(self, x):
+    @staticmethod
+    def _add_to_rgb_layer(x):
         """ Adds a (1x1) convolutional layer to generate an RGB image. """
-        x = Conv2D(filters=3, kernel_size=(1, 1), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = Conv2DEQL(filters=3, kernel_size=(1, 1), padding='same', gain=1)(x)
         return x
 
-    def _add_convolutional_layers(self, x, filters, n_layers):
+    @staticmethod
+    def _add_convolutional_layers(x, filters, n_layers):
         """ Adds two (3x3) convolutional layers. """
         for _ in range(n_layers):
-            x = Conv2D(filters=filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+            x = Conv2DEQL(filters=filters, kernel_size=(3, 3), padding='same')(x)
             x = LeakyReLU(0.20)(x)
             x = PixelNormalization()(x)
         return x
