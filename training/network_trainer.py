@@ -81,7 +81,7 @@ class NetworkTrainer:
             d_loss = discriminator.train_on_batch(x_real, x_fake)
             # 3.4 Train generator on discriminator score.
             z_latent = generate_latent_points(latent_dim, n_batch)
-            g_loss = composite.train_on_batch(z_latent, y_real)
+            g_loss = composite.train_on_batch(z_latent, y_fake)
             # 3.5 Monitor progress.
             if k % 100 == 0:
                 loss_dict = {**d_loss, **{'g_loss': g_loss}}

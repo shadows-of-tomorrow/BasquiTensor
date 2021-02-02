@@ -147,17 +147,22 @@ class Discriminator(Model):
     def train_on_batch(self, x_real, x_fake):
         batch_size = x_real.shape[0]
         with tf.GradientTape() as tape:
+            # 1. Compute Wasserstein distance.
             y_real = self(x_real, training=True)
             y_fake = self(x_fake, training=True)
-            d_loss_real = tf.reduce_mean(y_real)
-            d_loss_fake = -tf.reduce_mean(y_fake)
-            d_loss = d_loss_fake + d_loss_real
+            d_loss_real = -tf.reduce_mean(y_real)
+            d_loss_fake = tf.reduce_mean(y_fake)
+            d_loss = d_loss_real + d_loss_fake
+            # 2. Compute gradient penalty.
             gp_loss = self.gp_weight * self._gradient_penalty(x_real, x_fake, batch_size)
             d_loss += gp_loss
+            # 3. Compute discriminator penalty.
             dp_loss = self.dp_weight * tf.reduce_mean(tf.square(y_real))
             d_loss += dp_loss
+        # 4. Apply gradients
         gradient = tape.gradient(d_loss, self.variables)
         self.optimizer.apply_gradients(zip(gradient, self.variables))
+        # 5. Compile losses in dictionary.
         loss_dict = {"d_loss_real": d_loss_real.numpy(),
                      "d_loss_fake": d_loss_fake.numpy(),
                      "gp_loss": gp_loss.numpy(),
