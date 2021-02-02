@@ -1,9 +1,9 @@
 import os
 from datetime import datetime
-from processing.configs import ConfigProcessor
-from processing.images import ImageProcessor
-from construction.networks import NetworkConstructor
-from training.trainers import NetworkTrainer
+from processing.config_processor import ConfigProcessor
+from processing.image_processor import ImageProcessor
+from construction.network_constructor import NetworkConstructor
+from training.network_trainer import NetworkTrainer
 
 
 class Engine:
@@ -11,21 +11,22 @@ class Engine:
     def __init__(self, run_id):
         self.run_id = run_id
         self.parent_dir = os.path.dirname(__file__)
-        self.config_dir = os.path.join(self.parent_dir, 'config')
+        self.config_dir = os.path.join(self.parent_dir, 'io', 'input', 'configs')
 
     def run(self):
-        configs = self._read_config_files()
+        configs = self._process_config_files()
         image_processors = self._construct_image_processors(configs)
         networks = self._construct_networks(configs)
         network_trainers = self._construct_network_trainers(image_processors, configs)
         self._train_networks(networks, network_trainers)
 
-    def _read_config_files(self):
-        return ConfigProcessor().read_configs(self.config_dir)
+    def _process_config_files(self):
+        configs = ConfigProcessor().run(self.parent_dir, self.config_dir)
+        return configs
 
     def _construct_image_processors(self, configs):
-        input_dirs = [os.path.join(self.parent_dir, config['image_input_folder']) for config in configs]
-        output_dirs = [os.path.join(self.parent_dir, config['image_output_folder']) for config in configs]
+        input_dirs = [os.path.join(self.parent_dir, config['directories']['input']) for config in configs]
+        output_dirs = [os.path.join(self.parent_dir, config['directories']['output']) for config in configs]
         image_processors = [ImageProcessor(dir_in=input_dirs[k], dir_out=output_dirs[k]) for k in range(len(configs))]
         return image_processors
 
@@ -50,6 +51,6 @@ class Engine:
 
 
 if __name__ == "__main__":
-    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
     engine = Engine(run_id=timestamp)
     engine.run()

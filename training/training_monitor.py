@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from construction.utils import generate_fake_samples
 
 
-class Monitor:
+class TrainingMonitor:
     """ Monitors the training performance. """
     def __init__(self, image_processor):
         self.image_processor = image_processor
@@ -24,7 +24,7 @@ class Monitor:
     def store_plots(self, generator, step, fade_in):
         """ Generates and stores plots based on current generator. """
         # 1. Extract relevant fields.
-        dir_out = self.image_processor.dir_out
+        dir_out = os.path.join(self.image_processor.dir_out, 'plots')
         latent_dim = generator.input.shape[1]
         res = generator.output.shape[1]
         # 2. Generate and scale fake images.
@@ -37,15 +37,24 @@ class Monitor:
             plt.axis('off')
             plt.imshow(x[k])
         # 4. Create output directories (if these do not exist).
-        if fade_in:
-            file_dir = os.path.join(dir_out, f'{res}x{res}_fade_in')
-        else:
-            file_dir = os.path.join(dir_out, f'{res}x{res}_normal')
-        if not os.path.exists(dir_out):
-            os.mkdir(dir_out)
-        if not os.path.exists(file_dir):
-            os.mkdir(file_dir)
+        if fade_in: file_dir = os.path.join(dir_out, f'{res}x{res}_fade_in')
+        else: file_dir = os.path.join(dir_out, f'{res}x{res}_tuned')
+        if not os.path.exists(file_dir): os.makedirs(file_dir)
         # 5. Store images.
         file_name = os.path.join(file_dir, '%s.png' % step)
         plt.savefig(file_name)
         plt.close()
+
+    def store_networks(self, discriminator, generator, composite, fade_in):
+        """ Stores Keras networks for later use. """
+        # 1. Extract relevant fields.
+        dir_out = os.path.join(self.image_processor.dir_out, 'networks')
+        res = generator.output.shape[1]
+        # 2. Create output directories (if these do not exist).
+        if fade_in: file_dir = os.path.join(dir_out, f'{res}x{res}_fade_in')
+        else: file_dir = os.path.join(dir_out, f'{res}x{res}_tuned')
+        if not os.path.exists(file_dir): os.makedirs(file_dir)
+        # 3. Store networks.
+        discriminator.save(os.path.join(file_dir, f"discriminator"))
+        generator.save(os.path.join(file_dir, f"generator"))
+        composite.save(os.path.join(file_dir, f"composite"))

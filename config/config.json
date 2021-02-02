@@ -1,6 +1,0 @@
-{
-  "network_parameters": {"latent_dim": 256, "max_filters": 256, "output_res": 256},
-  "training_parameters": {"n_batches": [16, 16, 16, 16, 16, 16, 16], "n_epochs": [1, 1, 1, 1, 1, 1, 1]},
-  "image_input_folder": "images/data/celeb_a",
-  "image_output_folder": "images/out/celeb_a"
-}

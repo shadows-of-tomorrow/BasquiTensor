@@ -1,5 +1,5 @@
 import numpy as np
-from construction.custom_layers import WeightedSum
+from construction.layers import WeightedSum
 from tensorflow.keras import backend
 
 

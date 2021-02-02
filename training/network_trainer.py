@@ -2,7 +2,7 @@ from construction.utils import update_fade_in
 from construction.utils import generate_fake_samples
 from construction.utils import generate_real_samples
 from construction.utils import generate_latent_points
-from training.monitors import Monitor
+from training.training_monitor import TrainingMonitor
 
 
 class NetworkTrainer:
@@ -10,7 +10,7 @@ class NetworkTrainer:
     def __init__(self, image_processor, **training_config):
         self.stage = 0
         self.image_processor = image_processor
-        self.monitor = Monitor(self.image_processor)
+        self.monitor = TrainingMonitor(self.image_processor)
         self.n_imgs = image_processor.count_imgs()
         self.n_batches = training_config['n_batches']
         self.n_epochs = training_config['n_epochs']
@@ -87,3 +87,4 @@ class NetworkTrainer:
                 loss_dict = {**d_loss, **{'g_loss': g_loss}}
                 self.monitor.print_losses(shape[0], **loss_dict)
                 self.monitor.store_plots(generator, n_batch * k, fade_in)
+        self.monitor.store_networks(discriminator, generator, composite, fade_in)

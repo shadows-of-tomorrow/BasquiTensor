@@ -1,16 +1,16 @@
 import numpy as np
 import tensorflow as tf
-from construction.custom_layers import WeightedSum, MinibatchStDev, DenseEQL, Conv2DEQL
+from construction.layers import WeightedSum, MinibatchStDev
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers import Input, LeakyReLU
+from tensorflow.keras.layers import Input, LeakyReLU, Dense, Conv2D
 from tensorflow.keras.layers import AveragePooling2D, Flatten
 from tensorflow.keras.initializers import RandomNormal
 
 
 class DiscriminatorConstructor:
     """ Creates a list of progressively growing discriminator models. """
-    def __init__(self, skip_layers=3, input_res=4, output_res=None, max_filters=None):
+    def __init__(self, output_res, max_filters, skip_layers=3, input_res=4):
         self.skip_layers = skip_layers
         self.input_res = input_res
         self.output_res = output_res
@@ -44,15 +44,15 @@ class DiscriminatorConstructor:
         # 3. Add minibatch standard deviation layer.
         x = MinibatchStDev()(x)
         # 4. Add (3x3) convolutional layer.
-        x = Conv2DEQL(filters=filters_init, kernel_size=(3, 3), padding='same')(x)
+        x = Conv2D(filters=filters_init, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 5. Flatten and add dense layer.
         x = Flatten()(x)
-        x = DenseEQL(units=filters_init)(x)
+        x = Dense(units=filters_init, kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 6. Flatten and add dense layer.
         x = Flatten()(x)
-        output_layer = DenseEQL(units=1, gain=1)(x)
+        output_layer = Dense(units=1, kernel_initializer=self.kernel_init)(x)
         # 7. Construct (custom) Keras model.
         initial_model = Discriminator(inputs=input_layer, outputs=output_layer)
         # 8. Compile (custom) Keras model.
@@ -102,19 +102,18 @@ class DiscriminatorConstructor:
         # 2. Add fromRGB layer.
         x = self._add_from_rgb_layer(input_layer, filters_current)
         # 2. Add first (3x3) convolutional layer.
-        x = Conv2DEQL(filters=filters_current, kernel_size=(3, 3), padding='same')(x)
+        x = Conv2D(filters=filters_current, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 3. Add second (3x3) convolutional layer.
-        x = Conv2DEQL(filters=filters_previous, kernel_size=(3, 3), padding='same')(x)
+        x = Conv2D(filters=filters_previous, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 3. Add pooling layer to downscale image resolution (0.50x).
         x = AveragePooling2D()(x)
         return x
 
-    @staticmethod
-    def _add_from_rgb_layer(x, filters):
+    def _add_from_rgb_layer(self, x, filters):
         """ Adds a (1x1) convolutional layer to process an RGB image. """
-        x = Conv2DEQL(filters=filters, kernel_size=(1, 1), padding='same')(x)
+        x = Conv2D(filters=filters, kernel_size=(1, 1), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         return x
 
@@ -143,7 +142,7 @@ class Discriminator(Model):
         self.dp_weight = 0.001
 
     def compile(self, optimizer):
-        super(Discriminator, self).compile(optimizer=optimizer)
+        super().compile(optimizer=optimizer)
 
     def train_on_batch(self, x_real, x_fake):
         batch_size = x_real.shape[0]
