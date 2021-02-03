@@ -1,4 +1,5 @@
 import numpy as np
+
 from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.layers import Layer, Add, Dense, Conv2D
 from tensorflow.keras import backend

@@ -22,7 +22,7 @@ class NetworkTrainer:
         composites = networks['composites']
         assert len(discriminators) == len(generators) == len(composites)
         assert len(discriminators) == len(self.n_batches) == len(self.n_epochs)
-        print(f"Training model at 4x4 resolution!")
+        print(f"Training networks at 4x4 resolution...")
         # 1. Extract initial models.
         init_discriminator = discriminators[0][0]
         init_generator = generators[0][0]
@@ -39,7 +39,7 @@ class NetworkTrainer:
         # 3. Train models at each growth stage.
         for k in range(1, len(composites)):
             self.stage += 1
-            print(f"Training model at {2 ** (self.stage + 2)}x{2 ** (self.stage + 2)} resolution!")
+            print(f"Training networks at {2 ** (self.stage + 2)}x{2 ** (self.stage + 2)} resolution...")
             # 3.1 Get normal and fade in models.
             [dis_normal, dis_fade_in] = discriminators[k]
             [gen_normal, gen_fade_in] = generators[k]

@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
-from construction.layers import WeightedSum, MinibatchStDev
+
+from construction.layers import WeightedSum, MinibatchStDev, DenseEQL, Conv2DEQL
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input, LeakyReLU, Dense, Conv2D
@@ -10,13 +11,14 @@ from tensorflow.keras.initializers import RandomNormal
 
 class DiscriminatorConstructor:
     """ Creates a list of progressively growing discriminator models. """
-    def __init__(self, output_res, max_filters, skip_layers=3, input_res=4):
+    def __init__(self, skip_layers=3, **network_config):
         self.skip_layers = skip_layers
-        self.input_res = input_res
-        self.output_res = output_res
-        self.base_filters = int(2 ** 13)
-        self.max_filters = max_filters
-        self.n_blocks = int(np.log2(output_res/input_res)+1)
+        self.input_res = network_config['input_res']
+        self.output_res = network_config['output_res']
+        self.max_filters = network_config['max_filters']
+        self.base_filters = network_config['base_filters']
+        self.use_eql = network_config['use_eql'] == "True"
+        self.n_blocks = int(np.log2(self.output_res/self.input_res)+1)
         self.kernel_init = RandomNormal(stddev=0.02)
 
     def run(self):
@@ -44,15 +46,24 @@ class DiscriminatorConstructor:
         # 3. Add minibatch standard deviation layer.
         x = MinibatchStDev()(x)
         # 4. Add (3x3) convolutional layer.
-        x = Conv2D(filters=filters_init, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        if self.use_eql:
+            x = Conv2DEQL(filters=filters_init, kernel_size=(3, 3), padding='same')(x)
+        else:
+            x = Conv2D(filters=filters_init, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 5. Flatten and add dense layer.
         x = Flatten()(x)
-        x = Dense(units=filters_init, kernel_initializer=self.kernel_init)(x)
+        if self.use_eql:
+            x = DenseEQL(units=filters_init)(x)
+        else:
+            x = Dense(units=filters_init, kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 6. Flatten and add dense layer.
         x = Flatten()(x)
-        output_layer = Dense(units=1, kernel_initializer=self.kernel_init)(x)
+        if self.use_eql:
+            output_layer = DenseEQL(units=1, gain=1)(x)
+        else:
+            output_layer = Dense(units=1, kernel_initializer=self.kernel_init)(x)
         # 7. Construct (custom) Keras model.
         initial_model = Discriminator(inputs=input_layer, outputs=output_layer)
         # 8. Compile (custom) Keras model.
@@ -102,10 +113,16 @@ class DiscriminatorConstructor:
         # 2. Add fromRGB layer.
         x = self._add_from_rgb_layer(input_layer, filters_current)
         # 2. Add first (3x3) convolutional layer.
-        x = Conv2D(filters=filters_current, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        if self.use_eql:
+            x = Conv2DEQL(filters=filters_current, kernel_size=(3, 3), padding='same')(x)
+        else:
+            x = Conv2D(filters=filters_current, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 3. Add second (3x3) convolutional layer.
-        x = Conv2D(filters=filters_previous, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        if self.use_eql:
+            x = Conv2DEQL(filters=filters_previous, kernel_size=(3, 3), padding='same')(x)
+        else:
+            x = Conv2D(filters=filters_previous, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 3. Add pooling layer to downscale image resolution (0.50x).
         x = AveragePooling2D()(x)
@@ -113,7 +130,10 @@ class DiscriminatorConstructor:
 
     def _add_from_rgb_layer(self, x, filters):
         """ Adds a (1x1) convolutional layer to process an RGB image. """
-        x = Conv2D(filters=filters, kernel_size=(1, 1), padding='same', kernel_initializer=self.kernel_init)(x)
+        if self.use_eql:
+            x = Conv2DEQL(filters=filters, kernel_size=(1, 1), padding='same')(x)
+        else:
+            x = Conv2D(filters=filters, kernel_size=(1, 1), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         return x
 

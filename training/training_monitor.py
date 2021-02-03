@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+
 from construction.utils import generate_fake_samples
 from construction.utils import generate_real_samples
 
@@ -49,7 +50,7 @@ class TrainingMonitor:
         x_real = [x_real[k] for k in range(len(x_real))]
         # 4. Generate "border" images.
         n_border = int(np.sqrt(self.n_samples))
-        x_border = np.zeros((n_border, res, res))
+        x_border = np.ones((n_border, res, res, 3))
         x_border = [x_border[k] for k in range(len(x_border))]
         # 5. Construct image grid.
         n_grid = int(np.sqrt(self.n_samples))
