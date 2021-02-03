@@ -55,9 +55,8 @@ class GeneratorConstructor:
         """ Constructs the initial generator handling a 4x4 resolution. """
         # 1. Construct input layer.
         input_layer = Input(shape=(self.latent_dim,))
-        x = PixelNormalization()(input_layer)
         # 2. Map latent space to feature maps aka "(4x4) convolutional layer".
-        x = self._add_latent_mapping_layer(x, filters)
+        x = self._add_latent_mapping_layer(input_layer, filters)
         # 4. Add a (3x3) convolutional layer.
         x = self._add_convolutional_layers(x, filters, 1)
         # 5. Add toRGB layer.

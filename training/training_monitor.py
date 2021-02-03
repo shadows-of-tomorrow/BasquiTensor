@@ -72,6 +72,7 @@ class TrainingMonitor:
             os.makedirs(file_dir)
         # 5. Store images.
         file_name = os.path.join(file_dir, '%s.png' % step)
+        plt.suptitle("Fake / Real")
         plt.savefig(file_name)
         plt.close()
 

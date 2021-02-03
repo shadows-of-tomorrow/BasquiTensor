@@ -24,10 +24,11 @@ def generate_real_samples(image_provider, n_samples, shape):
 
 
 def generate_latent_points(latent_dim, n_samples):
-    """ Draws random vector from multivariate normal distribution. """
-    z = np.random.randn(latent_dim * n_samples)
-    z = z.reshape(n_samples, latent_dim)
-    return z
+    """ Draws random samples from an n-dimensional ball. """
+    z = np.random.normal(size=(n_samples, latent_dim))
+    r = np.random.uniform(size=(n_samples, 1)) ** (1.0 / latent_dim)
+    norm = np.reshape(np.sqrt(np.sum(z**2, 1)), newshape=(n_samples, 1))
+    return r * z / norm
 
 
 def generate_fake_samples(generator, latent_dim, n_samples):
