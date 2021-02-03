@@ -14,7 +14,7 @@ class DiscriminatorConstructor:
         self.skip_layers = skip_layers
         self.input_res = input_res
         self.output_res = output_res
-        self.base_filters = int(2 ** 10)
+        self.base_filters = int(2 ** 13)
         self.max_filters = max_filters
         self.n_blocks = int(np.log2(output_res/input_res)+1)
         self.kernel_init = RandomNormal(stddev=0.02)
