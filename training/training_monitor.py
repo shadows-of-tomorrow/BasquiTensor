@@ -17,10 +17,10 @@ class TrainingMonitor:
         """ Prints the current resolution and losses to the terminal. """
         dir_out = self.image_processor.dir_out
         # Construct loss message.
-        message = f"Resolution: {res}x{res}, "
-        message += f"Fade-in: {fade_in}, "
+        message = f"Resolution: {res},"
+        message += f"Fade-in: {fade_in},"
         for key, value in losses.items():
-            message += f"{key}: {value}, "
+            message += f"{key}: {value},"
         message += "\n"
         # Create dir if non-existent.
         file_dir = dir_out + '/loss.txt'
@@ -50,7 +50,7 @@ class TrainingMonitor:
         x_real = [x_real[k] for k in range(len(x_real))]
         # 4. Generate "border" images.
         n_border = int(np.sqrt(self.n_samples))
-        x_border = np.ones((n_border, res, res, 3))
+        x_border = np.zeros((n_border, res, res))
         x_border = [x_border[k] for k in range(len(x_border))]
         # 5. Construct image grid.
         n_grid = int(np.sqrt(self.n_samples))

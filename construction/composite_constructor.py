@@ -34,4 +34,4 @@ class CompositeConstructor:
 
     @staticmethod
     def _compile_model(model):
-        model.compile(loss=wasserstein_loss, optimizer=Adam(lr=0.001, beta_1=0.00, beta_2=0.99, epsilon=10e-8))
+        model.compile(loss=wasserstein_loss, optimizer=Adam(lr=0.0001, beta_1=0.00, beta_2=0.90, epsilon=10e-8))

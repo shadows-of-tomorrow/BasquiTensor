@@ -1,7 +1,10 @@
 import numpy as np
 import tensorflow as tf
 
+from construction.utils import generate_fake_samples
+from construction.utils import generate_real_samples
 from construction.layers import WeightedSum, MinibatchStDev, DenseEQL, Conv2DEQL
+
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input, LeakyReLU, Dense, Conv2D
@@ -12,14 +15,14 @@ from tensorflow.keras.initializers import RandomNormal
 class DiscriminatorConstructor:
     """ Creates a list of progressively growing discriminator models. """
     def __init__(self, skip_layers=3, **network_config):
-        self.skip_layers = skip_layers
         self.input_res = network_config['input_res']
         self.output_res = network_config['output_res']
         self.max_filters = network_config['max_filters']
         self.base_filters = network_config['base_filters']
-        self.use_eql = network_config['use_eql'] == "True"
+        self.use_eql = network_config['use_eql']
         self.n_blocks = int(np.log2(self.output_res/self.input_res)+1)
-        self.kernel_init = RandomNormal(stddev=0.02)
+        self.skip_layers = skip_layers
+        self.kernel_init = RandomNormal()
 
     def run(self):
         """ Creates a list of progressively growing discriminator models. """
@@ -150,7 +153,7 @@ class DiscriminatorConstructor:
     @staticmethod
     def _compile_model(model):
         """ Compiles a model using default settings. """
-        model.compile(optimizer=Adam(lr=0.001, beta_1=0.00, beta_2=0.99, epsilon=10e-8))
+        model.compile(optimizer=Adam(lr=0.0001, beta_1=0.00, beta_2=0.90, epsilon=10e-8))
 
 
 # Todo: Match signatures of Keras class.
@@ -158,36 +161,38 @@ class Discriminator(Model):
     """ Wraps keras model to incorporate gradient penalty. """
     def __init__(self, *args, **kwargs):
         super(Discriminator, self).__init__(*args, **kwargs)
-        self.gp_weight = 10.0
+        self.d_steps = 5
         self.dp_weight = 0.001
+        self.gp_weight = 10.0
 
     def compile(self, optimizer):
         super().compile(optimizer=optimizer)
 
-    def train_on_batch(self, x_real, x_fake):
-        batch_size = x_real.shape[0]
-        with tf.GradientTape() as tape:
-            # 1. Compute Wasserstein distance.
-            y_real = self(x_real, training=True)
-            y_fake = self(x_fake, training=True)
-            d_loss_real = -tf.reduce_mean(y_real)
-            d_loss_fake = tf.reduce_mean(y_fake)
-            d_loss = d_loss_real + d_loss_fake
-            # 2. Compute gradient penalty.
-            gp_loss = self.gp_weight * self._gradient_penalty(x_real, x_fake, batch_size)
-            d_loss += gp_loss
-            # 3. Compute discriminator penalty.
-            dp_loss = self.dp_weight * tf.reduce_mean(tf.square(y_real))
-            d_loss += dp_loss
-        # 4. Apply gradients
-        gradient = tape.gradient(d_loss, self.variables)
-        self.optimizer.apply_gradients(zip(gradient, self.variables))
+    def train_on_batch(self, image_processor, generator, batch_size, shape):
+        latent_dim = generator.input.shape[1]
+        for k in range(self.d_steps):
+            x_fake, _ = generate_fake_samples(generator, latent_dim, batch_size)
+            x_real, _ = generate_real_samples(image_processor, batch_size, shape)
+            with tf.GradientTape() as tape:
+                # 1. Compute loss on real examples.
+                y_real = self(x_real, training=True)
+                d_loss_real = -tf.reduce_mean(y_real)
+                # 2. Compute loss on fake examples.
+                y_fake = self(x_fake, training=True)
+                d_loss_fake = tf.reduce_mean(y_fake)
+                # 3. Compute total loss on training examples.
+                d_loss = d_loss_real + d_loss_fake
+                # 2. Compute gradient penalty.
+                gp_loss = self.gp_weight * self._gradient_penalty(x_real, x_fake, batch_size)
+                d_loss += gp_loss
+                # 3. Compute drift penalty.
+                dp_loss = self.dp_weight * tf.reduce_mean(tf.square(y_real))
+                d_loss += dp_loss
+            # 4. Apply gradients
+            gradient = tape.gradient(d_loss, self.variables)
+            self.optimizer.apply_gradients(zip(gradient, self.variables))
         # 5. Compile losses in dictionary.
-        loss_dict = {"d_loss_real": d_loss_real.numpy(),
-                     "d_loss_fake": d_loss_fake.numpy(),
-                     "gp_loss": gp_loss.numpy(),
-                     "dp_loss": dp_loss.numpy()}
-        return loss_dict
+        return {"d_loss_real": d_loss_real.numpy(), "d_loss_fake": d_loss_fake.numpy(), "gp_loss": gp_loss.numpy()}
 
     def _gradient_penalty(self, x_real, x_fake, batch_size):
         alpha = tf.random.uniform([batch_size, 1, 1, 1], 0.0, 1.0)

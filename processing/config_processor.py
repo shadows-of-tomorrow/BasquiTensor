@@ -8,16 +8,27 @@ class ConfigProcessor:
         self.from_json = from_json
 
     def run(self, parent_dir, config_dir):
-        configs = self.read_configs(config_dir)
-        self.store_configs(parent_dir, configs)
+        configs = self._read_configs(config_dir)
+        self._store_configs(parent_dir, configs)
+        configs = self._process_configs(configs)
         return configs
 
-    def read_configs(self, config_dir):
+    @staticmethod
+    def _process_configs(configs):
+        for k in range(len(configs)):
+            configs[k]["network_parameters"]['use_eql'] = configs[k]["network_parameters"]['use_eql'] == "True"
+            configs[k]["network_parameters"]['use_growing'] = configs[k]["network_parameters"]['use_growing'] == "True"
+            if not configs[k]["network_parameters"]['use_growing']:
+                configs[k]["training_parameters"]['n_batches'] = [configs[k]["training_parameters"]['n_batches'][-1]]
+                configs[k]["training_parameters"]['n_epochs'] = [configs[k]["training_parameters"]['n_epochs'][-1]]
+        return configs
+
+    def _read_configs(self, config_dir):
         if self.from_json is True:
             return self._read_jsons(config_dir)
 
     @staticmethod
-    def store_configs(parent_dir, configs):
+    def _store_configs(parent_dir, configs):
         for config in configs:
             file_dir = os.path.join(parent_dir, config['directories']['output'])
             if not os.path.exists(file_dir):

@@ -1,6 +1,7 @@
 import numpy as np
 
 from construction.layers import PixelNormalization, WeightedSum, DenseEQL, Conv2DEQL
+
 from tensorflow.keras.layers import Input, Reshape, Dense, Conv2D
 from tensorflow.keras.layers import LeakyReLU, UpSampling2D
 from tensorflow.keras.models import Model
@@ -15,9 +16,9 @@ class GeneratorConstructor:
         self.output_res = network_config['output_res']
         self.max_filters = network_config['max_filters']
         self.base_filters = network_config['base_filters']
-        self.use_eql = network_config['use_eql'] == "True"
+        self.use_eql = network_config['use_eql']
         self.n_blocks = int(np.log2(self.output_res / self.input_res) + 1)
-        self.kernel_init = RandomNormal(stddev=0.02)
+        self.kernel_init = RandomNormal()
 
     def run(self):
         """ Executes the construction of a generator model list. """
@@ -41,12 +42,12 @@ class GeneratorConstructor:
         end_block_old = old_model.layers[-2].output
         # 2. Apply upsampling to the previous convolutional block.
         upsampling_layer = UpSampling2D()(end_block_old)
-        # 3. Construct "normal" generator.
+        # 3. Construct "tuning" generator.
         end_block_new = self._add_convolutional_layers(upsampling_layer, filters, 2)
         output_layer_new = self._add_to_rgb_layer(end_block_new)
         next_model = Model(old_model.input, output_layer_new)
         # 4. Construct "fade-in" generator.
-        output_layer_old = old_model.layers[-1](upsampling_layer)
+        output_layer_old = self._add_to_rgb_layer(upsampling_layer)
         output_layer_wsum = WeightedSum()([output_layer_old, output_layer_new])
         fade_in_model = Model(old_model.input, output_layer_wsum)
         return [next_model, fade_in_model]
