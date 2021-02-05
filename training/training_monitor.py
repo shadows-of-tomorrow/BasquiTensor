@@ -17,10 +17,10 @@ class TrainingMonitor:
         """ Prints the current resolution and losses to the terminal. """
         dir_out = self.image_processor.dir_out
         # Construct loss message.
-        message = f"Resolution: {res},"
-        message += f"Fade-in: {fade_in},"
+        message = f"Resolution:{res},"
+        message += f"Fade-in:{fade_in},"
         for key, value in losses.items():
-            message += f"{key}: {value},"
+            message += f"{key}:{value},"
         message += "\n"
         # Create dir if non-existent.
         file_dir = dir_out + '/loss.txt'
@@ -89,6 +89,6 @@ class TrainingMonitor:
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
         # 3. Store networks.
-        discriminator.save(os.path.join(file_dir, f"discriminator"))
-        generator.save(os.path.join(file_dir, f"generator"))
-        composite.save(os.path.join(file_dir, f"composite"))
+        discriminator.save(os.path.join(file_dir, f"discriminator.h5"))
+        generator.save(os.path.join(file_dir, f"generator.h5"))
+        composite.save(os.path.join(file_dir, f"composite.h5"))
