@@ -11,7 +11,7 @@ class NetworkConstructor:
     def run(self):
         discriminators = DiscriminatorConstructor(**self.network_config).run()
         generators = GeneratorConstructor(**self.network_config).run()
-        composites = CompositeConstructor().run(discriminators, generators)
+        composites = CompositeConstructor(**self.network_config).run(discriminators, generators)
         if self.network_config['use_growing']:
             networks = {'discriminators': discriminators,
                         'generators': generators,

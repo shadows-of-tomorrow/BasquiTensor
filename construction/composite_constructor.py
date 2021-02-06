@@ -5,8 +5,8 @@ from tensorflow.keras.optimizers import Adam
 
 class CompositeConstructor:
     """ Creates a list of progressively growing composites. """
-    def __init__(self, init=True):
-        self.init = init
+    def __init__(self, **network_config):
+        self.adam_params = network_config['adam_params']
 
     def run(self, discriminators, generators):
         assert len(discriminators) == len(generators)
@@ -32,6 +32,9 @@ class CompositeConstructor:
             composites.append([next_model, fade_in_model])
         return composites
 
-    @staticmethod
-    def _compile_model(model):
-        model.compile(loss=wasserstein_loss, optimizer=Adam(lr=0.0001, beta_1=0.00, beta_2=0.90, epsilon=10e-8))
+    def _compile_model(self, model):
+        lr = self.adam_params['lr']
+        beta_1 = self.adam_params['beta_1']
+        beta_2 = self.adam_params['beta_2']
+        epsilon = self.adam_params['epsilon']
+        model.compile(loss=wasserstein_loss, optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon))

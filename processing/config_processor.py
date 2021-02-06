@@ -16,7 +16,6 @@ class ConfigProcessor:
     @staticmethod
     def _process_configs(configs):
         for k in range(len(configs)):
-            configs[k]["network_parameters"]['use_eql'] = configs[k]["network_parameters"]['use_eql'] == "True"
             configs[k]["network_parameters"]['use_growing'] = configs[k]["network_parameters"]['use_growing'] == "True"
             if not configs[k]["network_parameters"]['use_growing']:
                 configs[k]["training_parameters"]['n_batches'] = [configs[k]["training_parameters"]['n_batches'][-1]]

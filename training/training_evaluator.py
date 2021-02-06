@@ -3,23 +3,38 @@ import numpy as np
 import scipy as scp
 import matplotlib.pyplot as plt
 
+from tensorflow.keras.models import load_model
+from tensorflow.keras.applications.inception_v3 import InceptionV3
+
+from construction.utils import generate_fake_samples
+from construction.utils import generate_real_samples
+from construction.layers import PixelNormalization, WeightedSum
+
 
 class TrainingEvaluator:
 
-    def __init__(self, image_processor=None, loss_file_name='loss.txt'):
+    def __init__(self, image_processor):
         self.image_processor = image_processor
-        self.loss_file_name = loss_file_name
-        self.d_loss_real = ' d_loss_real'
-        self.d_loss_fake = ' d_loss_fake'
-        self.g_loss = ' g_loss'
-        self.gp_loss = ' gp_loss'
+        self.custom_layers = {'PixelNormalization': PixelNormalization, 'WeightedSum': WeightedSum}
+        self.d_loss_real = 'd_loss_real'
+        self.d_loss_fake = 'd_loss_fake'
+        self.g_loss = 'g_loss'
+        self.gp_loss = 'gp_loss'
 
-    def _compute_fid_dict(self):
+    def _compute_fid_dict(self, n_samples=1000):
+        fid_dict = dict()
         networks_dir = os.path.join(self.image_processor.dir_out, 'networks')
         for network_dir in os.listdir(networks_dir):
-            resolution = int(network_dir.split('_')[0][0])
-            fade_in = network_dir.split('_')[1] == "fade_in"
-            generator_path = os.path.join(networks_dir, network_dir, 'generator')
+            res = int(network_dir.split('_')[0].split('x')[0])
+            if res >= 75:
+                generator_path = os.path.join(networks_dir, network_dir, 'generator.h5')
+                generator = load_model(generator_path, self.custom_layers)
+                x_real, _ = generate_real_samples(self.image_processor, n_samples, (res, res))
+                x_fake, _ = generate_fake_samples(generator, generator.input_shape[1], n_samples)
+                inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=(res, res, 3))
+                fid = self._compute_fid(inception_model, x_real, x_fake)
+                fid_dict[network_dir] = fid
+        return fid_dict
 
     def _compute_fid(self, model, x_real, x_fake):
         # 1. Compute activations.
@@ -29,7 +44,7 @@ class TrainingEvaluator:
         mu_real, sigma_real = activation_real.mean(axis=0), np.cov(activation_real, rowvar=False)
         mu_fake, sigma_fake = activation_fake.mean(axis=0), np.cov(activation_fake, rowvar=False)
         # 3. Compute difference statistics.
-        mu_diff = np.sum(np.square(mu_real-mu_fake))
+        mu_diff = np.sum(np.square(mu_real - mu_fake))
         cov_diff = scp.linalg.sqrtm(sigma_real.dot(sigma_fake))
         # 4. Check if imaginary numbers from matrix square root.
         if np.iscomplexobj(cov_diff):
@@ -37,7 +52,8 @@ class TrainingEvaluator:
         # 5. Compute Frechet Inception Distance (FID).
         return mu_diff + np.trace(sigma_real + sigma_fake - 2.0 * cov_diff)
 
-    def _plot_loss(self, loss_dict):
+    def plot_loss(self, loss_dir):
+        loss_dict = self._read_loss_dict(loss_dir)
         plt.suptitle("Training Loss")
         plt.subplot(2, 2, 1)
         d_loss = self._add_d_losses(loss_dict)
@@ -59,8 +75,8 @@ class TrainingEvaluator:
         plt.legend()
         plt.show()
 
-    def _parse_loss_file(self, loss_dir):
-        with open(loss_dir + '/' + self.loss_file_name, 'r') as file:
+    def _read_loss_dict(self, loss_dir):
+        with open(loss_dir + '/loss.txt', 'r') as file:
             lines = file.readlines()
             losses = []
         for line in lines:
@@ -92,3 +108,12 @@ class TrainingEvaluator:
     @staticmethod
     def _lod_to_dol(lod):
         return {k: [dic[k] for dic in lod] for k in lod[0]}
+
+
+dir_in = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'input', 'images', 'celeb_a')
+dir_out = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'celeb_a_256x256_pggan_1dsteps')
+from processing.image_processor import ImageProcessor
+
+image_processor = ImageProcessor(dir_in=dir_in, dir_out=dir_out)
+training_evaluator = TrainingEvaluator(image_processor=image_processor)
+test = training_evaluator._compute_fid_dict()

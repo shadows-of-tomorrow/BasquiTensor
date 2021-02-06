@@ -19,7 +19,7 @@ class DiscriminatorConstructor:
         self.output_res = network_config['output_res']
         self.max_filters = network_config['max_filters']
         self.base_filters = network_config['base_filters']
-        self.use_eql = network_config['use_eql']
+        self.adam_params = network_config['adam_params']
         self.n_blocks = int(np.log2(self.output_res/self.input_res)+1)
         self.skip_layers = skip_layers
         self.kernel_init = RandomNormal()
@@ -49,24 +49,15 @@ class DiscriminatorConstructor:
         # 3. Add minibatch standard deviation layer.
         x = MinibatchStDev()(x)
         # 4. Add (3x3) convolutional layer.
-        if self.use_eql:
-            x = Conv2DEQL(filters=filters_init, kernel_size=(3, 3), padding='same')(x)
-        else:
-            x = Conv2D(filters=filters_init, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = Conv2D(filters=filters_init, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 5. Flatten and add dense layer.
         x = Flatten()(x)
-        if self.use_eql:
-            x = DenseEQL(units=filters_init)(x)
-        else:
-            x = Dense(units=filters_init, kernel_initializer=self.kernel_init)(x)
+        x = Dense(units=filters_init, kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 6. Flatten and add dense layer.
         x = Flatten()(x)
-        if self.use_eql:
-            output_layer = DenseEQL(units=1, gain=1)(x)
-        else:
-            output_layer = Dense(units=1, kernel_initializer=self.kernel_init)(x)
+        output_layer = Dense(units=1, kernel_initializer=self.kernel_init)(x)
         # 7. Construct (custom) Keras model.
         initial_model = Discriminator(inputs=input_layer, outputs=output_layer)
         # 8. Compile (custom) Keras model.
@@ -116,16 +107,10 @@ class DiscriminatorConstructor:
         # 2. Add fromRGB layer.
         x = self._add_from_rgb_layer(input_layer, filters_current)
         # 2. Add first (3x3) convolutional layer.
-        if self.use_eql:
-            x = Conv2DEQL(filters=filters_current, kernel_size=(3, 3), padding='same')(x)
-        else:
-            x = Conv2D(filters=filters_current, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = Conv2D(filters=filters_current, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 3. Add second (3x3) convolutional layer.
-        if self.use_eql:
-            x = Conv2DEQL(filters=filters_previous, kernel_size=(3, 3), padding='same')(x)
-        else:
-            x = Conv2D(filters=filters_previous, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = Conv2D(filters=filters_previous, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         # 3. Add pooling layer to downscale image resolution (0.50x).
         x = AveragePooling2D()(x)
@@ -133,10 +118,7 @@ class DiscriminatorConstructor:
 
     def _add_from_rgb_layer(self, x, filters):
         """ Adds a (1x1) convolutional layer to process an RGB image. """
-        if self.use_eql:
-            x = Conv2DEQL(filters=filters, kernel_size=(1, 1), padding='same')(x)
-        else:
-            x = Conv2D(filters=filters, kernel_size=(1, 1), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = Conv2D(filters=filters, kernel_size=(1, 1), padding='same', kernel_initializer=self.kernel_init)(x)
         x = LeakyReLU(0.20)(x)
         return x
 
@@ -150,10 +132,13 @@ class DiscriminatorConstructor:
         """ Computes the number of feature maps at a given stage. """
         return int(np.minimum(self.base_filters / (2**(stage+1)), self.max_filters))
 
-    @staticmethod
-    def _compile_model(model):
+    def _compile_model(self, model):
         """ Compiles a model using default settings. """
-        model.compile(optimizer=Adam(lr=0.0001, beta_1=0.00, beta_2=0.90, epsilon=10e-8))
+        lr = self.adam_params["lr"]
+        beta_1 = self.adam_params["beta_1"]
+        beta_2 = self.adam_params["beta_2"]
+        epsilon = self.adam_params["epsilon"]
+        model.compile(optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon))
 
 
 # Todo: Match signatures of Keras class.
@@ -161,7 +146,7 @@ class Discriminator(Model):
     """ Wraps keras model to incorporate gradient penalty. """
     def __init__(self, *args, **kwargs):
         super(Discriminator, self).__init__(*args, **kwargs)
-        self.d_steps = 5
+        self.d_steps = 1
         self.dp_weight = 0.001
         self.gp_weight = 10.0
 
