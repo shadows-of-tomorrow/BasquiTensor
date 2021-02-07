@@ -1,5 +1,5 @@
 import numpy as np
-from progressive_gan.layers import WeightedSum
+from proGAN.layers import WeightedSum
 from tensorflow.keras import backend
 
 

@@ -1,6 +1,6 @@
 import os
 import matplotlib.pyplot as plt
-from progressive_gan.utils import generate_fake_samples
+from proGAN.utils import generate_fake_samples
 
 
 class Painter:

@@ -1,6 +1,6 @@
-from progressive_gan.discriminator_constructor import DiscriminatorConstructor
-from progressive_gan.generator_constructor import GeneratorConstructor
-from progressive_gan.composite_constructor import CompositeConstructor
+from proGAN.discriminator_constructor import DiscriminatorConstructor
+from proGAN.generator_constructor import GeneratorConstructor
+from proGAN.composite_constructor import CompositeConstructor
 
 
 class NetworkConstructor:

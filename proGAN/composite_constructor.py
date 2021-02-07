@@ -1,4 +1,4 @@
-from progressive_gan.loss_functions import wasserstein_loss
+from proGAN.loss_functions import wasserstein_loss
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 
