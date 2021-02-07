@@ -3,7 +3,7 @@ import json
 
 
 class ConfigProcessor:
-    """ Handles the reading and processing of configuration files. """
+
     def __init__(self, from_json=True):
         self.from_json = from_json
 

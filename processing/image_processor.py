@@ -6,7 +6,7 @@ from PIL import Image
 
 class ImageProcessor:
     """ Handles the reading and processing of images. """
-    def __init__(self, dir_in, dir_out, x_range=(0, 255), y_range=(-1, 1)):
+    def __init__(self, dir_in=None, dir_out=None, x_range=(0, 255), y_range=(-1, 1)):
         self.dir_in = dir_in
         self.dir_out = dir_out
         self.file_names = os.listdir(self.dir_in)
@@ -24,6 +24,9 @@ class ImageProcessor:
             batch.append(arr)
         return np.stack(batch, axis=0)
 
+    def count_imgs(self):
+        return len(os.listdir(self.dir_in))
+
     @staticmethod
     def scale_imgs(imgs, shape):
         imgs_out = []
@@ -31,9 +34,6 @@ class ImageProcessor:
             img_new = cv2.resize(src=img, dsize=shape, interpolation=cv2.INTER_NEAREST)
             imgs_out.append(img_new)
         return imgs_out
-
-    def count_imgs(self):
-        return len(os.listdir(self.dir_in))
 
     @staticmethod
     def read_img(dir_img):

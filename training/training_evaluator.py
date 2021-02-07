@@ -6,14 +6,14 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 
-from construction.utils import generate_fake_samples
-from construction.utils import generate_real_samples
-from construction.layers import PixelNormalization, WeightedSum
+from progressive_gan.utils import generate_fake_samples
+from progressive_gan.utils import generate_real_samples
+from progressive_gan.layers import PixelNormalization, WeightedSum
 
 
 class TrainingEvaluator:
 
-    def __init__(self, image_processor):
+    def __init__(self, image_processor=None):
         self.image_processor = image_processor
         self.custom_layers = {'PixelNormalization': PixelNormalization, 'WeightedSum': WeightedSum}
         self.d_loss_real = 'd_loss_real'
@@ -108,12 +108,3 @@ class TrainingEvaluator:
     @staticmethod
     def _lod_to_dol(lod):
         return {k: [dic[k] for dic in lod] for k in lod[0]}
-
-
-dir_in = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'input', 'images', 'celeb_a')
-dir_out = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'celeb_a_256x256_pggan_1dsteps')
-from processing.image_processor import ImageProcessor
-
-image_processor = ImageProcessor(dir_in=dir_in, dir_out=dir_out)
-training_evaluator = TrainingEvaluator(image_processor=image_processor)
-test = training_evaluator._compute_fid_dict()

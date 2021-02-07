@@ -3,4 +3,5 @@
 .idea
 .vscode
 venv
-io
+io/output
+io/input/images

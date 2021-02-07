@@ -1,9 +1,9 @@
 import numpy as np
 import tensorflow as tf
 
-from construction.utils import generate_fake_samples
-from construction.utils import generate_real_samples
-from construction.layers import WeightedSum, MinibatchStDev, DenseEQL, Conv2DEQL
+from progressive_gan.utils import generate_fake_samples
+from progressive_gan.utils import generate_real_samples
+from progressive_gan.layers import WeightedSum, MinibatchStDev
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
