@@ -1,6 +1,8 @@
 import numpy as np
-from progressive_gan.layers import WeightedSum
+
 from tensorflow.keras import backend
+
+from gans.custom_layers import WeightedSum
 
 
 def update_fade_in(models, step, n_steps):

@@ -2,8 +2,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from progressive_gan.utils import generate_fake_samples
-from progressive_gan.utils import generate_real_samples
+from gans.utils import generate_fake_samples
+from gans.utils import generate_real_samples
 
 
 class TrainingMonitor:

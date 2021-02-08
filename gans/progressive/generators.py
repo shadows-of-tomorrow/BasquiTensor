@@ -1,11 +1,15 @@
 import numpy as np
 
-from tensorflow.keras.layers import Input, Reshape, Dense, Conv2D
-from tensorflow.keras.layers import LeakyReLU, UpSampling2D
-from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import Reshape
+from tensorflow.keras.layers import UpSampling2D
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.models import Model
 
-from progressive_gan.layers import PixelNormalization, WeightedSum
+from gans.custom_layers import PixelNormalization, WeightedSum
 
 
 class GeneratorConstructor:
@@ -20,14 +24,14 @@ class GeneratorConstructor:
         self.kernel_init = RandomNormal()
 
     def run(self):
-        """ Executes the progressive_gan of a generator model list. """
-        # 1. Initialize list of discriminators.
+        """ Executes the progressive of a generator model list. """
+        # 1. Initialize list of generators.
         generators = []
-        # 2. Construct and add initial discriminator.
+        # 2. Construct and add initial generator.
         init_filters = self._number_of_filters(0)
         init_models = self._construct_initial_model(init_filters)
         generators.append(init_models)
-        # 3. Construct and add next discriminator.
+        # 3. Construct and add next generators.
         for k in range(1, self.n_blocks):
             old_model = generators[k - 1][0]
             next_filters = self._number_of_filters(k)

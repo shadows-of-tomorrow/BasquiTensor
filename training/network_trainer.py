@@ -1,7 +1,7 @@
 import numpy as np
 
-from progressive_gan.utils import update_fade_in
-from progressive_gan.utils import generate_latent_points
+from gans.utils import update_fade_in
+from gans.utils import generate_latent_points
 from training.training_monitor import TrainingMonitor
 
 

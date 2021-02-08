@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 
-from progressive_gan.utils import generate_fake_samples
-from progressive_gan.utils import generate_real_samples
-from progressive_gan.layers import PixelNormalization, WeightedSum
+from gans.utils import generate_fake_samples
+from gans.utils import generate_real_samples
+from gans.progressive import PixelNormalization, WeightedSum
 
 
 class TrainingEvaluator:

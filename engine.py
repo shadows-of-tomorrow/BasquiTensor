@@ -4,10 +4,10 @@ from datetime import datetime
 os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from progressive_gan.network_constructor import NetworkConstructor
-from processing.config_processor import ConfigProcessor
-from processing.image_processor import ImageProcessor
+from gans.networks import NetworkFactory
 from training.network_trainer import NetworkTrainer
+from processing.image_processor import ImageProcessor
+from processing.config_processor import ConfigProcessor
 
 
 class Engine:
@@ -16,7 +16,6 @@ class Engine:
         self.run_id = run_id
         self.parent_dir = os.path.dirname(__file__)
         self.config_dir = os.path.join(self.parent_dir, 'io', 'input', 'configs')
-        self._set_tensorflow_logging()
 
     def run(self):
         configs = self._process_config_files()
@@ -39,7 +38,7 @@ class Engine:
     def _construct_networks(configs):
         print("Constructing networks...")
         network_configs = [config['network_parameters'] for config in configs]
-        network_constructors = [NetworkConstructor(**network_config) for network_config in network_configs]
+        network_constructors = [NetworkFactory(**network_config) for network_config in network_configs]
         networks_list = [network_constructor.run() for network_constructor in network_constructors]
         return networks_list
 
@@ -54,11 +53,6 @@ class Engine:
         assert len(networks) == len(network_trainers)
         for k in range(len(network_trainers)):
             network_trainers[k].run(networks[k])
-
-    @staticmethod
-    def _set_tensorflow_logging():
-        os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '0'
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 if __name__ == "__main__":
