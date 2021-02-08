@@ -5,7 +5,7 @@ from tensorflow.keras.layers import LeakyReLU, UpSampling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import RandomNormal
 
-from proGAN.layers import PixelNormalization, WeightedSum
+from progressive_gan.layers import PixelNormalization, WeightedSum
 
 
 class GeneratorConstructor:
@@ -20,7 +20,7 @@ class GeneratorConstructor:
         self.kernel_init = RandomNormal()
 
     def run(self):
-        """ Executes the proGAN of a generator model list. """
+        """ Executes the progressive_gan of a generator model list. """
         # 1. Initialize list of discriminators.
         generators = []
         # 2. Construct and add initial discriminator.

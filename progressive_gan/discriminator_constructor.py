@@ -1,9 +1,9 @@
 import numpy as np
 import tensorflow as tf
 
-from proGAN.utils import generate_fake_samples
-from proGAN.utils import generate_real_samples
-from proGAN.layers import WeightedSum, MinibatchStDev
+from progressive_gan.utils import generate_fake_samples
+from progressive_gan.utils import generate_real_samples
+from progressive_gan.layers import WeightedSum, MinibatchStDev
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
