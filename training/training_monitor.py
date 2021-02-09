@@ -3,31 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gans.utils import generate_fake_samples
 from gans.utils import generate_real_samples
-from gans.utils import compute_fid
-from tensorflow.keras.applications.inception_v3 import InceptionV3
+from training.ffid_calculator import FFIDCalculator
 
 
 class TrainingMonitor:
     """ Monitors the training performance. """
     def __init__(self, image_processor):
         self.n_plot_samples = 25
-        self.n_fid_samples = 10000
         self.image_processor = image_processor
-        print(f"Loading inception V3 network...")
-        self.inception_res = 299
-        self.inception_network = InceptionV3(include_top=False, pooling='avg',
-                                             input_shape=(self.inception_res, self.inception_res, 3))
+        self.ffid_calculator = FFIDCalculator(self.image_processor)
 
     def store_fid(self, res, fade_in, generator):
-        # 1. Compute FID at output resolution.
-        shape = (self.inception_res, self.inception_res)
-        x_real, _ = generate_real_samples(self.image_processor, self.n_fid_samples, shape)
-        x_fake, _ = generate_fake_samples(generator, generator.input.shape[1], self.n_fid_samples)
-        x_fake = self.image_processor.resize_np_array(x_fake, shape)
-        fid = compute_fid(self.inception_network, x_real, x_fake)
-        # 2. Write FID to file.
+        fid = self.ffid_calculator.compute_fid(generator)
+        message = f"Resolution:{res},Fade-in:{fade_in},FID:{fid},\n"
         file_dir = self.image_processor.dir_out + '/fid.txt'
-        message = f"Resolution:{res},Fade-in:{fade_in},FID:{fid}\n"
         if os.path.exists(file_dir):
             mode = 'a'
         else:

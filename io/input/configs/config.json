@@ -4,7 +4,7 @@
     "model": "StyleGAN",
     "n_base_filters": 1024,
     "n_max_filters": 256,
-    "n_dense_layers": 8,
+    "n_dense_layers": 6,
     "n_dense_units": 256,
     "latent_size": 256,
     "input_res": 4,
@@ -15,7 +15,7 @@
   {
     "monitor_fid": "False",
     "n_batches": [16, 16, 16, 16, 16, 16, 16],
-    "n_epochs": [3, 3, 3, 3, 3, 3, 3]
+    "n_epochs": [1, 1, 1, 1, 1, 1, 1]
   },
   "directories":
   {
