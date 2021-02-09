@@ -14,7 +14,7 @@ from gans.custom_layers import NoiseModulation
 from gans.custom_layers import AdaptiveInstanceModulation
 
 
-class GeneratorConstructor:
+class StyleGANGeneratorConstructor:
 
     def __init__(self, **network_config):
         # 1. Resolution related fields.
@@ -103,16 +103,3 @@ class GeneratorConstructor:
 
     def _filters_at_stage(self, stage):
         return np.minimum(int(self.n_base_filters/(2.0**stage)), self.n_max_filters)
-
-
-config = {
-    'input_res': 4,
-    'output_res': 1024,
-    'latent_size': 512,
-    'n_base_filters': 8192,
-    'n_max_filters': 512,
-    'n_dense_layers': 8,
-    'n_dense_units': 512
-}
-
-generators = GeneratorConstructor(**config).run()

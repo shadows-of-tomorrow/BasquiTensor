@@ -12,14 +12,14 @@ from tensorflow.keras.models import Model
 from gans.custom_layers import PixelNormalization, WeightedSum
 
 
-class GeneratorConstructor:
+class ProGANGeneratorConstructor:
     """ Constructs a list of progressively growing generator models. """
     def __init__(self, **network_config):
-        self.latent_dim = network_config['latent_dim']
+        self.latent_size = network_config['latent_size']
         self.input_res = network_config['input_res']
         self.output_res = network_config['output_res']
-        self.max_filters = network_config['max_filters']
-        self.base_filters = network_config['base_filters']
+        self.n_max_filters = network_config['n_max_filters']
+        self.n_base_filters = network_config['n_base_filters']
         self.n_blocks = int(np.log2(self.output_res / self.input_res) + 1)
         self.kernel_init = RandomNormal()
 
@@ -58,7 +58,7 @@ class GeneratorConstructor:
     def _construct_initial_model(self, filters):
         """ Constructs the initial generator handling a 4x4 resolution. """
         # 1. Construct input layer.
-        input_layer = Input(shape=(self.latent_dim,))
+        input_layer = Input(shape=(self.latent_size,))
         # 2. Map latent space to feature maps aka "(4x4) convolutional layer".
         x = self._add_latent_mapping_layer(input_layer, filters)
         # 4. Add a (3x3) convolutional layer.
@@ -91,4 +91,4 @@ class GeneratorConstructor:
         return x
 
     def _number_of_filters(self, stage):
-        return int(np.minimum(self.base_filters / (2**(stage+1)), self.max_filters))
+        return int(np.minimum(self.n_base_filters / (2 ** (stage + 1)), self.n_max_filters))

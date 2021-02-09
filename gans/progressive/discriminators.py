@@ -12,13 +12,13 @@ from tensorflow.keras.layers import AveragePooling2D, Flatten
 from tensorflow.keras.initializers import RandomNormal
 
 
-class DiscriminatorConstructor:
+class ProGANDiscriminatorConstructor:
     """ Creates a list of progressively growing discriminator models. """
     def __init__(self, skip_layers=3, **network_config):
         self.input_res = network_config['input_res']
         self.output_res = network_config['output_res']
-        self.max_filters = network_config['max_filters']
-        self.base_filters = network_config['base_filters']
+        self.n_max_filters = network_config['n_max_filters']
+        self.n_base_filters = network_config['n_base_filters']
         self.adam_params = network_config['adam_params']
         self.n_blocks = int(np.log2(self.output_res/self.input_res)+1)
         self.skip_layers = skip_layers
@@ -130,7 +130,7 @@ class DiscriminatorConstructor:
 
     def _number_of_filters(self, stage):
         """ Computes the number of feature maps at a given stage. """
-        return int(np.minimum(self.base_filters / (2**(stage+1)), self.max_filters))
+        return int(np.minimum(self.n_base_filters / (2 ** (stage + 1)), self.n_max_filters))
 
     def _compile_model(self, model):
         """ Compiles a model using default settings. """

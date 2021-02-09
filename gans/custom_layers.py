@@ -18,8 +18,10 @@ class AdaptiveInstanceModulation(Layer):
 
     @staticmethod
     def _reshape_dense(y):
-        y = tf.reshape(y, [-1, 2, y.shape[1] // 2])
-        return y[:, 0], y[:, 1]
+        y = tf.reshape(y, [-1, 2, 1, y.shape[1] // 2])
+        ys = y[:, 0:1, :, :]
+        yb = y[:, 1:2, :, :]
+        return ys, yb
 
     @staticmethod
     def _instance_normalization(x):
