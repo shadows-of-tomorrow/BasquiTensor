@@ -28,12 +28,20 @@ class ImageProcessor:
         return len(os.listdir(self.dir_in))
 
     @staticmethod
-    def scale_imgs(imgs, shape):
+    def resize_imgs(imgs, shape):
         imgs_out = []
         for img in imgs:
             img_new = cv2.resize(src=img, dsize=shape, interpolation=cv2.INTER_NEAREST)
             imgs_out.append(img_new)
         return imgs_out
+
+    @staticmethod
+    def resize_np_array(arr, shape):  # (n_samples, width, height, n_channels)
+        sub_arrs = []
+        for k in range(arr.shape[0]):
+            sub_arr = cv2.resize(src=arr[k], dsize=shape, interpolation=cv2.INTER_NEAREST)
+            sub_arrs.append(sub_arr)
+        return np.stack(sub_arrs, axis=0)
 
     @staticmethod
     def read_img(dir_img):

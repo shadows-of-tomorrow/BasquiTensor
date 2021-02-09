@@ -12,7 +12,7 @@ from tensorflow.keras.layers import AveragePooling2D, Flatten
 from tensorflow.keras.initializers import RandomNormal
 
 
-class ProGANDiscriminatorConstructor:
+class DiscriminatorConstructorProgressive:
     """ Creates a list of progressively growing discriminator models. """
     def __init__(self, skip_layers=3, **network_config):
         self.input_res = network_config['input_res']

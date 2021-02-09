@@ -13,6 +13,7 @@
   },
   "training_parameters":
   {
+    "monitor_fid": "False",
     "n_batches": [16, 16, 16, 16, 16, 16, 16],
     "n_epochs": [3, 3, 3, 3, 3, 3, 3]
   },

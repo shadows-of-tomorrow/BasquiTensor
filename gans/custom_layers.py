@@ -36,9 +36,14 @@ class NoiseModulation(Layer):
         self.activation = activation
         super().__init__(**kwargs)
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({'activation': self.activation})
+        return config
+
     def build(self, input_shape):
-        self.kernel = self.add_variable(shape=[input_shape[3]], initializer='zeros', trainable=True)
-        self.bias = self.add_variable(shape=[input_shape[3]], initializer='zeros', trainable=True)
+        self.kernel = self.add_variable(name='kernel', shape=[input_shape[3]], initializer='zeros', trainable=True)
+        self.bias = self.add_variable(name='bias', shape=[input_shape[3]], initializer='zeros', trainable=True)
         super().build(input_shape)
 
     def call(self, inputs, **kwargs):
@@ -57,8 +62,13 @@ class Constant(Layer):
         self.shape = shape
         super(Constant, self).__init__(**kwargs)
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({'shape': self.shape})
+        return config
+
     def build(self, input_shape):
-        self.kernel = self.add_variable(shape=self.shape, initializer='ones', trainable=True)
+        self.kernel = self.add_variable(name='kernel', shape=self.shape, initializer='ones', trainable=True)
         super(Constant, self).build(input_shape)
 
     def call(self, inputs, **kwargs):

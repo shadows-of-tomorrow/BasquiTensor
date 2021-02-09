@@ -1,56 +1,14 @@
-import os
-import numpy as np
-import scipy as scp
 import matplotlib.pyplot as plt
-
-from tensorflow.keras.models import load_model
-from tensorflow.keras.applications.inception_v3 import InceptionV3
-
-from gans.utils import generate_fake_samples
-from gans.utils import generate_real_samples
-from gans.progressive import PixelNormalization, WeightedSum
 
 
 class TrainingEvaluator:
 
     def __init__(self, image_processor=None):
         self.image_processor = image_processor
-        self.custom_layers = {'PixelNormalization': PixelNormalization, 'WeightedSum': WeightedSum}
         self.d_loss_real = 'd_loss_real'
         self.d_loss_fake = 'd_loss_fake'
         self.g_loss = 'g_loss'
         self.gp_loss = 'gp_loss'
-
-    def _compute_fid_dict(self, n_samples=1000):
-        fid_dict = dict()
-        networks_dir = os.path.join(self.image_processor.dir_out, 'networks')
-        for network_dir in os.listdir(networks_dir):
-            res = int(network_dir.split('_')[0].split('x')[0])
-            if res >= 75:
-                generator_path = os.path.join(networks_dir, network_dir, 'generator.h5')
-                generator = load_model(generator_path, self.custom_layers)
-                x_real, _ = generate_real_samples(self.image_processor, n_samples, (res, res))
-                x_fake, _ = generate_fake_samples(generator, generator.input_shape[1], n_samples)
-                inception_model = InceptionV3(include_top=False, pooling='avg', input_shape=(res, res, 3))
-                fid = self._compute_fid(inception_model, x_real, x_fake)
-                fid_dict[network_dir] = fid
-        return fid_dict
-
-    def _compute_fid(self, model, x_real, x_fake):
-        # 1. Compute activations.
-        activation_real = model.predict(x_real)
-        activation_fake = model.predict(x_fake)
-        # 2. Compute mean and covariance.
-        mu_real, sigma_real = activation_real.mean(axis=0), np.cov(activation_real, rowvar=False)
-        mu_fake, sigma_fake = activation_fake.mean(axis=0), np.cov(activation_fake, rowvar=False)
-        # 3. Compute difference statistics.
-        mu_diff = np.sum(np.square(mu_real - mu_fake))
-        cov_diff = scp.linalg.sqrtm(sigma_real.dot(sigma_fake))
-        # 4. Check if imaginary numbers from matrix square root.
-        if np.iscomplexobj(cov_diff):
-            cov_diff = cov_diff.real
-        # 5. Compute Frechet Inception Distance (FID).
-        return mu_diff + np.trace(sigma_real + sigma_fake - 2.0 * cov_diff)
 
     def plot_loss(self, loss_dir):
         loss_dict = self._read_loss_dict(loss_dir)
@@ -108,3 +66,6 @@ class TrainingEvaluator:
     @staticmethod
     def _lod_to_dol(lod):
         return {k: [dic[k] for dic in lod] for k in lod[0]}
+
+dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\celeb_a_256x256_stylegan"
+TrainingEvaluator().plot_loss(dir_loss)

@@ -1,29 +1,51 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-
 from gans.utils import generate_fake_samples
 from gans.utils import generate_real_samples
+from gans.utils import compute_fid
+from tensorflow.keras.applications.inception_v3 import InceptionV3
 
 
 class TrainingMonitor:
     """ Monitors the training performance. """
     def __init__(self, image_processor):
+        self.n_plot_samples = 25
+        self.n_fid_samples = 10000
         self.image_processor = image_processor
-        self.n_samples = 25
-        assert np.sqrt(self.n_samples) % 2 == 1  # This should be an uneven number.
+        print(f"Loading inception V3 network...")
+        self.inception_res = 299
+        self.inception_network = InceptionV3(include_top=False, pooling='avg',
+                                             input_shape=(self.inception_res, self.inception_res, 3))
+
+    def store_fid(self, res, fade_in, generator):
+        # 1. Compute FID at output resolution.
+        shape = (self.inception_res, self.inception_res)
+        x_real, _ = generate_real_samples(self.image_processor, self.n_fid_samples, shape)
+        x_fake, _ = generate_fake_samples(generator, generator.input.shape[1], self.n_fid_samples)
+        x_fake = self.image_processor.resize_np_array(x_fake, shape)
+        fid = compute_fid(self.inception_network, x_real, x_fake)
+        # 2. Write FID to file.
+        file_dir = self.image_processor.dir_out + '/fid.txt'
+        message = f"Resolution:{res},Fade-in:{fade_in},FID:{fid}\n"
+        if os.path.exists(file_dir):
+            mode = 'a'
+        else:
+            mode = 'w'
+        with open(file_dir, mode) as file:
+            file.write(message)
+            file.close()
 
     def store_losses(self, res, fade_in, **losses):
         """ Prints the current resolution and losses to the terminal. """
-        dir_out = self.image_processor.dir_out
-        # Construct loss message.
+        # 1. Construct loss message.
         message = f"Resolution:{res},"
         message += f"Fade-in:{fade_in},"
         for key, value in losses.items():
             message += f"{key}:{value},"
         message += "\n"
-        # Create dir if non-existent.
-        file_dir = dir_out + '/loss.txt'
+        # 2. Write message to file.
+        file_dir = self.image_processor.dir_out + '/loss.txt'
         if os.path.exists(file_dir):
             mode = 'a'
         else:
@@ -39,22 +61,22 @@ class TrainingMonitor:
         latent_dim = generator.input.shape[1]
         res = generator.output.shape[1]
         # 2. Generate and scale fake images.
-        n_fake = int(np.floor(self.n_samples/2))
+        n_fake = int(np.floor(self.n_plot_samples / 2))
         x_fake, _ = generate_fake_samples(generator, latent_dim, n_fake)
         x_fake = self.image_processor.shift_arr(x_fake, min_max=True)
         x_fake = [x_fake[k] for k in range(len(x_fake))]
         # 3. Generate and scale real images.
-        n_real = int(np.floor(self.n_samples/2))
+        n_real = int(np.floor(self.n_plot_samples / 2))
         x_real, _ = generate_real_samples(self.image_processor, n_real, (res, res))
         x_real = self.image_processor.shift_arr(x_real, min_max=True)
         x_real = [x_real[k] for k in range(len(x_real))]
         # 4. Generate "border" images.
-        n_border = int(np.sqrt(self.n_samples))
+        n_border = int(np.sqrt(self.n_plot_samples))
         x_border = np.zeros((n_border, res, res))
         x_border = [x_border[k] for k in range(len(x_border))]
         # 5. Construct image grid.
-        n_grid = int(np.sqrt(self.n_samples))
-        for k in range(self.n_samples):
+        n_grid = int(np.sqrt(self.n_plot_samples))
+        for k in range(self.n_plot_samples):
             plt.subplot(n_grid, n_grid, k + 1)
             plt.axis('off')
             if k % n_grid == 0 or (k-1) % n_grid == 0:

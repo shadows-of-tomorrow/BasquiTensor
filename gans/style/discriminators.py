@@ -1,7 +1,7 @@
-from gans.progressive.discriminators import ProGANDiscriminatorConstructor
+from gans.progressive.discriminators import DiscriminatorConstructorProgressive
 
 
-class StyleGANDiscriminatorConstructor(ProGANDiscriminatorConstructor):
+class DiscriminatorConstructorStyle(DiscriminatorConstructorProgressive):
 
     def __init__(self, **network_config):
         super().__init__(**network_config)

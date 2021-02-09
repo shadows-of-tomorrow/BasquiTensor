@@ -9,10 +9,11 @@ from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.models import Model
 
-from gans.custom_layers import PixelNormalization, WeightedSum
+from gans.custom_layers import PixelNormalization
+from gans.custom_layers import WeightedSum
 
 
-class ProGANGeneratorConstructor:
+class GeneratorConstructorProgressive:
     """ Constructs a list of progressively growing generator models. """
     def __init__(self, **network_config):
         self.latent_size = network_config['latent_size']

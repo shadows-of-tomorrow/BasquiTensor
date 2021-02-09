@@ -1,5 +1,4 @@
 import numpy as np
-
 from gans.utils import update_fade_in
 from gans.utils import generate_latent_points
 from training.training_monitor import TrainingMonitor

@@ -14,7 +14,7 @@ from gans.custom_layers import NoiseModulation
 from gans.custom_layers import AdaptiveInstanceModulation
 
 
-class StyleGANGeneratorConstructor:
+class GeneratorConstructorStyle:
 
     def __init__(self, **network_config):
         # 1. Resolution related fields.
