@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gans.utils import generate_fake_samples
 from gans.utils import generate_real_samples
-from training.ffid_calculator import FFIDCalculator
+from training.fid_calculator import FIDCalculator
 
 
 class TrainingMonitor:
@@ -11,10 +11,10 @@ class TrainingMonitor:
     def __init__(self, image_processor):
         self.n_plot_samples = 25
         self.image_processor = image_processor
-        self.ffid_calculator = FFIDCalculator(self.image_processor)
+        self.ffid_calculator = FIDCalculator(self.image_processor)
 
     def store_fid(self, res, fade_in, generator):
-        fid = self.ffid_calculator.compute_fid(generator)
+        fid = self.ffid_calculator.compute_fast_fid(generator)
         message = f"Resolution:{res},Fade-in:{fade_in},FID:{fid},\n"
         file_dir = self.image_processor.dir_out + '/fid.txt'
         if os.path.exists(file_dir):

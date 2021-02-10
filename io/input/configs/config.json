@@ -2,24 +2,25 @@
   "network_parameters":
   {
     "model": "StyleGAN",
-    "n_base_filters": 1024,
-    "n_max_filters": 256,
+    "use_growing": "False",
+    "n_base_filters": 8192,
+    "n_max_filters": 512,
     "n_dense_layers": 6,
-    "n_dense_units": 256,
-    "latent_size": 256,
+    "n_dense_units": 512,
+    "latent_size": 512,
     "input_res": 4,
-    "output_res": 256,
+    "output_res": 32,
     "adam_params": {"lr": 0.0001, "beta_1": 0.00, "beta_2": 0.90, "epsilon": 10e-8}
   },
   "training_parameters":
   {
     "monitor_fid": "False",
-    "n_batches": [16, 16, 16, 16, 16, 16, 16],
-    "n_epochs": [1, 1, 1, 1, 1, 1, 1]
+    "n_batches": [16],
+    "n_epochs": [1000]
   },
   "directories":
   {
-    "input": "io/input/images/celeb_a",
-    "output": "io/output/celeb_a_256x256_stylegan"
+    "input": "io/input/images/celeb_a/128x128",
+    "output": "io/output/celeb_a_32x32"
   }
 }

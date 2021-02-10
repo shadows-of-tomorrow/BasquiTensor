@@ -82,7 +82,8 @@ class NetworkTrainer:
             # 3.5 Monitor progress.
             loss_dict = {**d_loss, **{'g_loss': g_loss}}
             self.monitor.store_losses(shape[0], fade_in, **loss_dict)
-            if k % 100 == 0:
+            if k % 10 == 0:
                 self.monitor.store_fid(shape[0], fade_in, generator)
+            if k % 100 == 0:
                 self.monitor.store_plots(generator, n_batch * k, fade_in)
         self.monitor.store_networks(discriminator, generator, composite, fade_in)
