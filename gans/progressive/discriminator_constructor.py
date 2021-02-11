@@ -1,28 +1,30 @@
 import numpy as np
 import tensorflow as tf
-
-from gans.utils import generate_fake_samples
-from gans.utils import generate_real_samples
-from gans.custom_layers import WeightedSum, MinibatchStDev
-
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers import Input, LeakyReLU, Dense, Conv2D
-from tensorflow.keras.layers import AveragePooling2D, Flatten
-from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.initializers import HeNormal
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.layers import AveragePooling2D
+from tensorflow.keras.layers import Flatten
+from gans.utils import generate_fake_samples
+from gans.utils import generate_real_samples
+from gans.layers import WeightedSum
+from gans.layers import MinibatchStDev
 
 
 class DiscriminatorConstructorProgressive:
     """ Creates a list of progressively growing discriminator models. """
     def __init__(self, skip_layers=3, **network_config):
-        self.input_res = network_config['input_res']
         self.output_res = network_config['output_res']
         self.n_max_filters = network_config['n_max_filters']
         self.n_base_filters = network_config['n_base_filters']
         self.adam_params = network_config['adam_params']
-        self.n_blocks = int(np.log2(self.output_res/self.input_res)+1)
+        self.n_blocks = int(np.log2(self.output_res)-1)
         self.skip_layers = skip_layers
-        self.kernel_init = RandomNormal()
+        self.kernel_init = HeNormal()
 
     def run(self):
         """ Creates a list of progressively growing discriminator models. """
@@ -43,7 +45,7 @@ class DiscriminatorConstructorProgressive:
         # 1. Compute number of filters for initial model.
         filters_init = self._number_of_filters(0)
         # 2. Construct input layer for initial resolution.
-        input_layer = Input(shape=(self.input_res, self.input_res, 3))
+        input_layer = Input(shape=(4, 4, 3))
         # 3. Add fromRGB layer.
         x = self._add_from_rgb_layer(input_layer, filters_init)
         # 3. Add minibatch standard deviation layer.

@@ -1,10 +1,10 @@
-from gans.composites import CompositeConstructor
-
-from gans.progressive.generators import GeneratorConstructorProgressive
-from gans.progressive.discriminators import DiscriminatorConstructorProgressive
-
-from gans.style.generators import GeneratorConstructorStyle
-from gans.style.discriminators import DiscriminatorConstructorStyle
+from gans.composite_constructor import CompositeConstructor
+from gans.progressive.generator_constructor import GeneratorConstructorProgressive
+from gans.progressive.discriminator_constructor import DiscriminatorConstructorProgressive
+from gans.style.generator_constructor import GeneratorConstructorStyle
+from gans.style.discriminator_constructor import DiscriminatorConstructorStyle
+from gans.style_v2.generator_constructor import GeneratorConstructorStyleV2
+from gans.style_v2.discriminator_constructor import DiscriminatorConstructorStyleV2
 
 
 class NetworkConstructor:
@@ -18,20 +18,15 @@ class NetworkConstructor:
         return {'discriminators': discriminators, 'generators': generators, 'composites': composites}
 
     def _construct_gan_networks(self):
-        # 1. Construct networks using progressive growing.
         model_type = self.network_config['model']
         if model_type == "ProGAN":
-            discriminators, generators = self._construct_progressive_gan_networks()
+            return self._construct_progressive_gan_networks()
         elif model_type == "StyleGAN":
-            discriminators, generators = self._construct_style_gan_networks()
+            return self._construct_style_gan_networks()
+        elif model_type == "StyleGANV2":
+            return self._construct_style_gan_v2_networks()
         else:
             raise Exception(f"Model type: {model_type} is not recognized!")
-        # 2. Extract final networks if progressive growing is not used.
-        use_growing = self.network_config['use_growing'] == "True"
-        if use_growing:
-            return discriminators, generators
-        else:
-            return [discriminators[-1]], [generators[-1]]
 
     def _construct_progressive_gan_networks(self):
         discriminators = DiscriminatorConstructorProgressive(**self.network_config).run()
@@ -41,4 +36,9 @@ class NetworkConstructor:
     def _construct_style_gan_networks(self):
         discriminators = DiscriminatorConstructorStyle(**self.network_config).run()
         generators = GeneratorConstructorStyle(**self.network_config).run()
+        return discriminators, generators
+
+    def _construct_style_gan_v2_networks(self):
+        discriminators = DiscriminatorConstructorStyleV2(**self.network_config).run()
+        generators = GeneratorConstructorStyleV2(**self.network_config).run()
         return discriminators, generators

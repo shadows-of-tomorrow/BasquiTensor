@@ -1,26 +1,23 @@
 {
   "network_parameters":
   {
-    "model": "StyleGAN",
-    "use_growing": "False",
+    "model": "StyleGANV2",
     "n_base_filters": 8192,
     "n_max_filters": 512,
-    "n_dense_layers": 6,
-    "n_dense_units": 512,
+    "n_dense_layers": 8,
     "latent_size": 512,
-    "input_res": 4,
-    "output_res": 32,
+    "output_res": 64,
     "adam_params": {"lr": 0.0001, "beta_1": 0.00, "beta_2": 0.90, "epsilon": 10e-8}
   },
   "training_parameters":
   {
-    "monitor_fid": "False",
+    "monitor_fid": "True",
     "n_batches": [16],
-    "n_epochs": [1000]
+    "n_epochs": [10000]
   },
   "directories":
   {
     "input": "io/input/images/celeb_a/128x128",
-    "output": "io/output/celeb_a_32x32"
+    "output": "io/output/celeb_a_64x64"
   }
 }

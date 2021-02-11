@@ -1,4 +1,4 @@
-from gans.progressive.discriminators import DiscriminatorConstructorProgressive
+from gans.progressive.discriminator_constructor import DiscriminatorConstructorProgressive
 
 
 class DiscriminatorConstructorStyle(DiscriminatorConstructorProgressive):

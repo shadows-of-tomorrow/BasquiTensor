@@ -1,8 +1,52 @@
+import numpy as np
 import tensorflow as tf
-
 from tensorflow.keras import backend
 from tensorflow.keras.layers import Add
 from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.initializers import RandomNormal
+
+
+class DenseEQL(Dense):
+
+    def __init__(self, gain=np.sqrt(2), **kwargs):
+        super().__init__(kernel_initializer=RandomNormal(mean=0., stddev=1.), **kwargs)
+        self.gain = gain
+
+    def build(self, input_shape):
+        super().build(input_shape)
+        fan_in = np.prod(input_shape[1:])
+        self.he_const = self.gain / np.sqrt(fan_in)
+
+    def call(self, inputs, **kwargs):
+        output = backend.dot(inputs, self.kernel * self.he_const)
+        if self.use_bias:
+            output = backend.bias_add(output, self.bias, data_format='channels_last')
+        if self.activation is not None:
+            output = self.activation(output)
+        return output
+
+
+class Conv2DEQL(Conv2D):
+
+    def __init__(self, gain=np.sqrt(2), **kwargs):
+        super().__init__(kernel_initializer=RandomNormal(mean=0., stddev=1.), **kwargs)
+        self.gain = gain
+
+    def build(self, input_shape):
+        super().build(input_shape)
+        fan_in = np.prod(input_shape[1:])
+        self.he_const = self.gain / np.sqrt(fan_in)
+
+    def call(self, inputs, **kwargs):
+        output = backend.conv2d(inputs, self.kernel * self.he_const, strides=self.strides, padding=self.padding,
+                                data_format=self.data_format, dilation_rate=self.dilation_rate)
+        if self.use_bias:
+            output = backend.bias_add(output, self.bias, data_format=self.data_format)
+        if self.activation is not None:
+            output = self.activation(output)
+        return output
 
 
 class AdaptiveInstanceModulation(Layer):
@@ -58,8 +102,9 @@ class NoiseModulation(Layer):
 
 class Constant(Layer):
 
-    def __init__(self, shape, **kwargs):
+    def __init__(self, shape, initializer, **kwargs):
         self.shape = shape
+        self.initializer = initializer
         super(Constant, self).__init__(**kwargs)
 
     def get_config(self):
@@ -68,7 +113,7 @@ class Constant(Layer):
         return config
 
     def build(self, input_shape):
-        self.kernel = self.add_weight(name='kernel', shape=self.shape, initializer='ones', trainable=True)
+        self.kernel = self.add_weight(name='kernel', shape=self.shape, initializer=self.initializer, trainable=True)
         super(Constant, self).build(input_shape)
 
     def call(self, inputs, **kwargs):

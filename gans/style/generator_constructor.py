@@ -1,17 +1,16 @@
 import numpy as np
-
 from tensorflow.keras import backend
+from tensorflow.keras.initializers import HeNormal
+from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import UpSampling2D
-from tensorflow.keras.models import Model
-
-from gans.custom_layers import Constant
-from gans.custom_layers import WeightedSum
-from gans.custom_layers import NoiseModulation
-from gans.custom_layers import AdaptiveInstanceModulation
+from gans.layers import Constant
+from gans.layers import WeightedSum
+from gans.layers import NoiseModulation
+from gans.layers import AdaptiveInstanceModulation
 
 
 class GeneratorConstructorStyle:
@@ -29,6 +28,8 @@ class GeneratorConstructorStyle:
         self.n_max_filters = network_config['n_max_filters']
         self.n_dense_layers = network_config['n_dense_layers']
         self.n_dense_units = network_config['n_dense_units']
+        # 3. Kernel initialization.
+        self.kernel_init = HeNormal()
 
     def run(self):
         # 1. Initialize list of generators.
@@ -64,26 +65,35 @@ class GeneratorConstructorStyle:
 
     def _add_next_block(self, x, w_latent, stage):
         n_filters = self._filters_at_stage(stage)
+        # 1. Double resolution operation.
         x = UpSampling2D()(x)
-        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same')(x)
+        # 2. First conv (3x3) layer + noise.
+        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = NoiseModulation(activation=LeakyReLU(0.20))(x)
-        y = Dense(units=2*n_filters)(w_latent[:, 2*(stage-1), :])
+        # 3. First AdaIN block.
+        y = Dense(units=2*n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 2*(stage-1), :])
         x = AdaptiveInstanceModulation()([x, y])
-        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same')(x)
+        # 4. Second conv (3x3) layer + noise.
+        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = NoiseModulation(activation=LeakyReLU(0.20))(x)
-        y = Dense(units=2*n_filters)(w_latent[:, 2*(stage-1)+1, :])
+        # 5. Second AdaIN block.
+        y = Dense(units=2*n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 2*(stage-1)+1, :])
         x = AdaptiveInstanceModulation()([x, y])
         return x
 
     def _construct_initial_block(self, w_latent):
         n_filters = self._filters_at_stage(1)
-        x = Constant(shape=(1, self.input_res, self.input_res, n_filters))(w_latent)
+        # 1. Constant layer + noise.
+        x = Constant(shape=(1, self.input_res, self.input_res, n_filters), initializer='ones')(w_latent)
         x = NoiseModulation(activation=LeakyReLU(0.20))(x)
-        y = Dense(units=2*n_filters)(w_latent[:, 0, :])
+        # 2. First AdaIN block.
+        y = Dense(units=2*n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 0, :])
         x = AdaptiveInstanceModulation()([x, y])
-        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same')(x)
+        # 3. Conv (3x3) layer + noise.
+        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = NoiseModulation(activation=LeakyReLU(0.20))(x)
-        y = Dense(units=2*n_filters)(w_latent[:, 1, :])
+        # 4. Second AdaIN block.
+        y = Dense(units=2*n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 1, :])
         x = AdaptiveInstanceModulation()([x, y])
         return x
 
@@ -95,7 +105,8 @@ class GeneratorConstructorStyle:
 
     def _add_mapping_layers(self, x):
         for k in range(self.n_dense_layers):
-            x = Dense(units=self.n_dense_units, activation=LeakyReLU(0.20), name="mn_fc_%s" % str(k + 1))(x)
+            x = Dense(units=self.n_dense_units, activation=LeakyReLU(0.20), kernel_initializer=self.kernel_init,
+                      name="mn_fc_%s" % str(k + 1))(x)
         return x
 
     def _broadcast_disentangled_latents(self, x):

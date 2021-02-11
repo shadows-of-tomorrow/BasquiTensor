@@ -9,8 +9,8 @@ from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.models import Model
 
-from gans.custom_layers import PixelNormalization
-from gans.custom_layers import WeightedSum
+from gans.layers import PixelNormalization
+from gans.layers import WeightedSum
 
 
 class GeneratorConstructorProgressive:
