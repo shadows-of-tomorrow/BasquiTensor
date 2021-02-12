@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
-from gans.utils import generate_real_samples
-from gans.utils import generate_fake_samples
+from networks.utils import generate_real_samples
+from networks.utils import generate_fake_samples
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 
 

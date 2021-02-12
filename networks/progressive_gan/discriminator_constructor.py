@@ -7,9 +7,9 @@ from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import AveragePooling2D
 from tensorflow.keras.layers import Flatten
-from gans.progressive.discriminator import Discriminator
-from gans.layers import WeightedSum
-from gans.layers import MinibatchStDev
+from networks.progressive_gan.discriminator import Discriminator
+from networks.layers import WeightedSum
+from networks.layers import MinibatchStDev
 
 
 class DiscriminatorConstructorProgressive:

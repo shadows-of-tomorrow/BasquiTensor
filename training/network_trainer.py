@@ -1,15 +1,16 @@
 import numpy as np
-from gans.utils import update_fade_in
-from gans.utils import generate_latent_points
+from networks.utils import update_fade_in
+from networks.utils import generate_latent_points
 from training.training_monitor import TrainingMonitor
 
 
 class NetworkTrainer:
     """ Trains a set of progressively growing GANs. """
+
     def __init__(self, image_processor, **training_config):
         self.stage = 0
         self.image_processor = image_processor
-        self.monitor = TrainingMonitor(self.image_processor)
+        self.monitor = TrainingMonitor(self.image_processor, training_config["monitor_fid"] == "True")
         self.n_imgs = image_processor.count_imgs()
         self.n_batches = training_config['n_batches']
         self.n_epochs = training_config['n_epochs']
@@ -41,21 +42,9 @@ class NetworkTrainer:
             # 3.2 Train fade-in models.
             res = gen_normal.output.shape[1]
             print(f"Training networks at {res}x{res} resolution...")
-            self._train_epochs(
-                generator=gen_fade_in,
-                discriminator=dis_fade_in,
-                n_epoch=self.n_epochs[k],
-                n_batch=self.n_batches[k],
-                fade_in=True
-            )
+            self._train_epochs(gen_fade_in, dis_fade_in, self.n_epochs[k], self.n_batches[k], True)
             # 3.3 Train normal models.
-            self._train_epochs(
-                generator=gen_normal,
-                discriminator=dis_normal,
-                n_epoch=self.n_epochs[k],
-                n_batch=self.n_batches[k],
-                fade_in=False
-            )
+            self._train_epochs(gen_normal, dis_normal, self.n_epochs[k], self.n_batches[k], False)
 
     def _train_epochs(self, generator, discriminator, n_epoch, n_batch, fade_in):
         # 1. Compute number of training steps.

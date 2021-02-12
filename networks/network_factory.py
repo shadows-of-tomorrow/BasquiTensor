@@ -1,7 +1,7 @@
-from gans.progressive.generator_constructor import GeneratorConstructorProgressive
-from gans.progressive.discriminator_constructor import DiscriminatorConstructorProgressive
-from gans.style.generator_constructor import GeneratorConstructorStyle
-from gans.style.discriminator_constructor import DiscriminatorConstructorStyle
+from networks.progressive_gan.generator_constructor import GeneratorConstructorProgressive
+from networks.progressive_gan.discriminator_constructor import DiscriminatorConstructorProgressive
+from networks.style_gan.generator_constructor import GeneratorConstructorStyle
+from networks.style_gan.discriminator_constructor import DiscriminatorConstructorStyle
 
 
 class NetworkFactory:

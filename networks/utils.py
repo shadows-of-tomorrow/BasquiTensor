@@ -1,6 +1,6 @@
 import numpy as np
 from tensorflow.keras import backend
-from gans.layers import WeightedSum
+from networks.layers import WeightedSum
 
 
 def update_fade_in(models, step, n_steps):

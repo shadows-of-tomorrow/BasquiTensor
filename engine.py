@@ -4,7 +4,7 @@ from datetime import datetime
 os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from gans.network_factory import NetworkFactory
+from networks.network_factory import NetworkFactory
 from training.network_trainer import NetworkTrainer
 from processing.image_processor import ImageProcessor
 from processing.config_processor import ConfigProcessor

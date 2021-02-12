@@ -7,25 +7,24 @@ from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
-from gans.progressive.generator import Generator
-from gans.layers import PixelNormalization
-from gans.layers import WeightedSum
+from networks.progressive_gan.generator import Generator
+from networks.layers import PixelNormalization
+from networks.layers import WeightedSum
 
 
 class GeneratorConstructorProgressive:
     """ Constructs a list of progressively growing generator models. """
     def __init__(self, **network_config):
         self.latent_size = network_config['latent_size']
-        self.input_res = network_config['input_res']
         self.output_res = network_config['output_res']
         self.n_max_filters = network_config['n_max_filters']
         self.n_base_filters = network_config['n_base_filters']
         self.adam_params = network_config['adam_params']
-        self.n_blocks = int(np.log2(self.output_res / self.input_res) + 1)
+        self.n_blocks = int(np.log2(self.output_res)-1)
         self.kernel_init = RandomNormal()
 
     def run(self):
-        """ Executes the progressive of a generator model list. """
+        """ Executes the progressive_gan of a generator model list. """
         # 1. Initialize list of generators.
         generators = []
         # 2. Construct and add initial generator.
@@ -75,8 +74,8 @@ class GeneratorConstructorProgressive:
 
     def _add_latent_mapping_layer(self, x, filters):
         """ Maps the latent space to feature maps aka (4x4) convolutional layer. """
-        x = Dense(units=self.input_res*self.input_res*filters, kernel_initializer=self.kernel_init)(x)
-        x = Reshape(target_shape=(self.input_res, self.input_res, filters))(x)
+        x = Dense(units=4*4*filters, kernel_initializer=self.kernel_init)(x)
+        x = Reshape(target_shape=(4, 4, filters))(x)
         x = LeakyReLU(0.20)(x)
         x = PixelNormalization()(x)
         return x

@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from gans.utils import generate_fake_samples
-from gans.utils import generate_real_samples
+from networks.utils import generate_fake_samples
+from networks.utils import generate_real_samples
 
 
 class Discriminator(Model):

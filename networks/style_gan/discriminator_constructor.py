@@ -1,14 +1,16 @@
 import numpy as np
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Conv2D
+#from tensorflow.keras.layers import Dense
+#from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import AveragePooling2D
 from tensorflow.keras.initializers import HeNormal
-from gans.style.discriminator import Discriminator
-from gans.layers import MinibatchStDev
+from networks.style_gan.discriminator import Discriminator
+from networks.layers import MinibatchStDev
+from networks.layers import DenseEQL
+from networks.layers import Conv2DEQL
 
 
 class DiscriminatorConstructorStyle:
@@ -52,7 +54,7 @@ class DiscriminatorConstructorStyle:
         x = self._add_convolutional_layers(x, n_filters_2, 3, 1)
         x = self._add_downsampling_layer(x, None, False)
         # 4. Combine x and y to form block.
-        x = (x + y) / np.sqrt(2.0)  # Needed to reduce signal variance.
+        x = (x + y) / np.sqrt(2.0)
         return input_layer, x, y
 
     def _add_intermediate_block(self, x, y, stage):
@@ -65,7 +67,7 @@ class DiscriminatorConstructorStyle:
         x = self._add_convolutional_layers(x, n_filters_2, 3, 1)
         x = self._add_downsampling_layer(x, None, False)
         # 3. Combine x and y to form block.
-        x = (x + y) / np.sqrt(2.0)  # Needed to reduce signal variance.
+        x = (x + y) / np.sqrt(2.0)
         return x, y
 
     def _add_terminal_block(self, x):
@@ -92,17 +94,17 @@ class DiscriminatorConstructorStyle:
 
     def _add_convolutional_layers(self, x, n_filters, kernel_size, n_layers):
         for _ in range(n_layers):
-            x = Conv2D(filters=n_filters, kernel_size=(kernel_size, kernel_size), padding='same',
-                       kernel_initializer=self.kernel_init, activation=LeakyReLU(0.20))(x)
+            x = Conv2DEQL(filters=n_filters, kernel_size=(kernel_size, kernel_size), padding='same',
+                          activation=LeakyReLU(0.20))(x)
         return x
 
     def _add_dense_layer(self, x, units, flatten, use_activation):
         if flatten:
             x = Flatten()(x)
         if use_activation:
-            x = Dense(units=units, kernel_initializer=self.kernel_init, activation=LeakyReLU(0.20))(x)
+            x = DenseEQL(units=units, activation=LeakyReLU(0.20))(x)
         else:
-            x = Dense(units=units, kernel_initializer=self.kernel_init)(x)
+            x = DenseEQL(units=units)(x)
         return x
 
     def _add_from_rgb_layer(self, x, n_filters):

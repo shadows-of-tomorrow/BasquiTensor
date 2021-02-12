@@ -1,29 +1,32 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from gans.utils import generate_fake_samples
-from gans.utils import generate_real_samples
+from networks.utils import generate_fake_samples
+from networks.utils import generate_real_samples
 from training.fid_calculator import FIDCalculator
 
 
 class TrainingMonitor:
     """ Monitors the training performance. """
-    def __init__(self, image_processor):
+    def __init__(self, image_processor, monitor_fid=True):
         self.n_plot_samples = 25
         self.image_processor = image_processor
-        self.ffid_calculator = FIDCalculator(self.image_processor)
+        self.monitor_fid = monitor_fid
+        if self.monitor_fid:
+            self.ffid_calculator = FIDCalculator(self.image_processor)
 
     def store_fid(self, res, fade_in, generator):
-        fid = self.ffid_calculator.compute_fast_fid(generator)
-        message = f"Resolution:{res},Fade-in:{fade_in},FID:{fid},\n"
-        file_dir = self.image_processor.dir_out + '/fid.txt'
-        if os.path.exists(file_dir):
-            mode = 'a'
-        else:
-            mode = 'w'
-        with open(file_dir, mode) as file:
-            file.write(message)
-            file.close()
+        if self.monitor_fid:
+            fid = self.ffid_calculator.compute_fast_fid(generator)
+            message = f"Resolution:{res},Fade-in:{fade_in},FID:{fid},\n"
+            file_dir = self.image_processor.dir_out + '/fid.txt'
+            if os.path.exists(file_dir):
+                mode = 'a'
+            else:
+                mode = 'w'
+            with open(file_dir, mode) as file:
+                file.write(message)
+                file.close()
 
     def store_losses(self, res, fade_in, **losses):
         """ Prints the current resolution and losses to the terminal. """

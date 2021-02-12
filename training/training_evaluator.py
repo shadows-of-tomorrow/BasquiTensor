@@ -1,10 +1,11 @@
+import numpy as np
 import matplotlib.pyplot as plt
 
 
 class TrainingEvaluator:
 
     def __init__(self, image_processor=None):
-        self.loss_burn_in = 1000
+        self.loss_burn_in = 0
         self.fid_burn_in = 0
         self.image_processor = image_processor
         self.d_loss_real = 'd_loss_real'
@@ -18,22 +19,27 @@ class TrainingEvaluator:
         fid_dict = self._read_txt_file(loss_dir, 'fid.txt')
         plt.suptitle("Training Loss")
         plt.subplot(2, 2, 1)
-        d_loss = self._add_d_losses(loss_dict)
-        plt.plot(loss_dict[self.d_loss_real][self.loss_burn_in:], label='discriminator loss (real)', color='orange', linewidth=0.25)
-        plt.plot(loss_dict[self.d_loss_fake][self.loss_burn_in:], label='discriminator loss (fake)', color='blue', linewidth=0.25)
-        plt.plot(d_loss[self.loss_burn_in:], label='discriminator loss (total)', color='black', linewidth=0.25)
+        d_loss_real = self._scale_losses(loss_dict[self.d_loss_real][self.loss_burn_in:])
+        d_loss_fake = self._scale_losses(loss_dict[self.d_loss_fake][self.loss_burn_in:])
+        d_loss = self._scale_losses(self._add_d_losses(loss_dict)[self.loss_burn_in:])
+        plt.plot(d_loss_real, label='discriminator loss (real)', color='orange', linewidth=0.25)
+        plt.plot(d_loss_fake, label='discriminator loss (fake)', color='blue', linewidth=0.25)
+        plt.plot(d_loss, label='discriminator loss (total)', color='black', linewidth=0.25)
         plt.tight_layout()
         plt.legend()
         plt.subplot(2, 2, 2)
-        plt.plot(loss_dict[self.g_loss][self.loss_burn_in:], label='generator loss', color='red', linewidth=0.25)
+        g_loss = self._scale_losses(loss_dict[self.g_loss][self.loss_burn_in:])
+        plt.plot(g_loss, label='generator loss', color='red', linewidth=0.25)
         plt.tight_layout()
         plt.legend()
         plt.subplot(2, 2, 3)
-        plt.plot(loss_dict[self.gp_loss][self.loss_burn_in:], label='gradient penalty', color='purple', linewidth=0.25)
+        gp_loss = self._scale_losses(loss_dict[self.gp_loss][self.loss_burn_in:])
+        plt.plot(gp_loss, label='gradient penalty', color='purple', linewidth=0.25)
         plt.tight_layout()
         plt.legend()
         plt.subplot(2, 2, 4)
-        plt.plot(fid_dict[self.fid][self.fid_burn_in:], label='Frechet Inception Distance', color='green', linewidth=0.25)
+        fid_loss = self._scale_losses(fid_dict[self.fid][self.fid_burn_in:])
+        plt.plot(fid_loss, label='Frechet Inception Distance', color='green', linewidth=0.25)
         plt.tight_layout()
         plt.legend()
         plt.show()
@@ -71,6 +77,10 @@ class TrainingEvaluator:
     @staticmethod
     def _lod_to_dol(lod):
         return {k: [dic[k] for dic in lod] for k in lod[0]}
+
+    @staticmethod
+    def _scale_losses(losses):
+        return [x for x in losses]
 
 
 dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\celeb_a_128x128"
