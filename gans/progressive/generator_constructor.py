@@ -1,5 +1,5 @@
 import numpy as np
-
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Reshape
@@ -7,8 +7,7 @@ from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
-from tensorflow.keras.models import Model
-
+from gans.progressive.generator import Generator
 from gans.layers import PixelNormalization
 from gans.layers import WeightedSum
 
@@ -21,6 +20,7 @@ class GeneratorConstructorProgressive:
         self.output_res = network_config['output_res']
         self.n_max_filters = network_config['n_max_filters']
         self.n_base_filters = network_config['n_base_filters']
+        self.adam_params = network_config['adam_params']
         self.n_blocks = int(np.log2(self.output_res / self.input_res) + 1)
         self.kernel_init = RandomNormal()
 
@@ -49,11 +49,13 @@ class GeneratorConstructorProgressive:
         # 3. Construct "tuning" generator.
         end_block_new = self._add_convolutional_layers(upsampling_layer, filters, 2)
         output_layer_new = self._add_to_rgb_layer(end_block_new)
-        next_model = Model(old_model.input, output_layer_new)
+        next_model = Generator(old_model.input, output_layer_new)
+        self._compile_model(next_model)
         # 4. Construct "fade-in" generator.
         output_layer_old = self._add_to_rgb_layer(upsampling_layer)
         output_layer_wsum = WeightedSum()([output_layer_old, output_layer_new])
-        fade_in_model = Model(old_model.input, output_layer_wsum)
+        fade_in_model = Generator(old_model.input, output_layer_wsum)
+        self._compile_model(fade_in_model)
         return [next_model, fade_in_model]
 
     def _construct_initial_model(self, filters):
@@ -67,7 +69,8 @@ class GeneratorConstructorProgressive:
         # 5. Add toRGB layer.
         output_layer = self._add_to_rgb_layer(x)
         # 6. Construct Keras model.
-        initial_model = Model(input_layer, output_layer)
+        initial_model = Generator(input_layer, output_layer)
+        self._compile_model(initial_model)
         return [initial_model, initial_model]
 
     def _add_latent_mapping_layer(self, x, filters):
@@ -93,3 +96,11 @@ class GeneratorConstructorProgressive:
 
     def _number_of_filters(self, stage):
         return int(np.minimum(self.n_base_filters / (2 ** (stage + 1)), self.n_max_filters))
+
+    def _compile_model(self, model):
+        """ Compiles a model using default settings. """
+        lr = self.adam_params["lr"]
+        beta_1 = self.adam_params["beta_1"]
+        beta_2 = self.adam_params["beta_2"]
+        epsilon = self.adam_params["epsilon"]
+        model.compile(optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon))

@@ -1,23 +1,22 @@
 import numpy as np
 from tensorflow.keras import backend
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.initializers import HeNormal
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import UpSampling2D
 from gans.layers import Constant
-from gans.layers import WeightedSum
 from gans.layers import NoiseModulation
 from gans.layers import AdaptiveInstanceModulation
+from gans.style.generator import Generator
 
 
 class GeneratorConstructorStyle:
 
     def __init__(self, **network_config):
         # 1. Resolution related fields.
-        self.input_res = network_config['input_res']
         self.output_res = network_config['output_res']
         self.output_res_log2 = int(np.log2(self.output_res))
         self.n_styles = int(self.output_res_log2 * 2 - 2)
@@ -27,44 +26,44 @@ class GeneratorConstructorStyle:
         self.n_base_filters = network_config['n_base_filters']
         self.n_max_filters = network_config['n_max_filters']
         self.n_dense_layers = network_config['n_dense_layers']
-        self.n_dense_units = network_config['n_dense_units']
         # 3. Kernel initialization.
+        self.adam_params = network_config['adam_params']
         self.kernel_init = HeNormal()
 
     def run(self):
-        # 1. Initialize list of generators.
-        generators = []
-        # 2. Construct mapping network.
+        # 1. Construct mapping network.
         z_latent, w_latent = self._construct_mapping_network()
-        # 3. Construct and add initial generator.
-        block = self._construct_initial_block(w_latent)
-        to_rgb_layer = self._add_to_rgb(block)
-        generator_tune = Model(z_latent, to_rgb_layer)
-        generators.append([generator_tune, generator_tune])
-        # 4. Construct and add next generators.
+        # 3. Construct initial block.
+        x = self._construct_initial_block(w_latent)
+        y = self._add_to_rgb(x, None)
+        # 4. Construct and add next blocks.
         for stage in range(2, self.n_blocks+1):
-            # 4.1 Construct "pass-through" output layer.
-            upsampling_layer = UpSampling2D()(block)
-            output_layer_pt = self._add_to_rgb(upsampling_layer)
-            # 4.2 Construct "new" output layer.
-            block = self._add_next_block(block, w_latent, stage)
-            output_layer_new = self._add_to_rgb(block)
-            # 4.3 Construct "weighted sum" output layer.
-            output_layer_wsum = WeightedSum()([output_layer_pt, output_layer_new])
-            # 4.5 Construct new "tuning" generator.
-            generator_tuning = Model(z_latent, output_layer_new)
-            # 4.4 Construct next "fade-in" generator.
-            generator_fade_in = Model(z_latent, output_layer_wsum)
-            # 4.6 Append both generators to list.
-            generators.append([generator_tuning, generator_fade_in])
-        return generators
+            x = self._add_next_block(x, w_latent, stage)
+            y = UpSampling2D()(y)
+            y = self._add_to_rgb(x, y)
+        # 5. Construct and compile generator.
+        generator = Generator(z_latent, y)
+        self._compile_model(generator)
+        return [[generator, generator]]
 
-    def _add_to_rgb(self, x):
-        x = Conv2D(filters=3, kernel_size=(1, 1))(x)
+    def _construct_initial_block(self, w_latent):
+        n_filters = self._compute_filters_at_stage(1)
+        # 1. Constant layer + noise.
+        x = Constant(shape=(1, 4, 4, n_filters), initializer='ones')(w_latent)
+        x = NoiseModulation(activation=LeakyReLU(0.20))(x)
+        # 2. First AdaIN block.
+        y = Dense(units=2*n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 0, :])
+        x = AdaptiveInstanceModulation()([x, y])
+        # 3. Conv (3x3) layer + noise.
+        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = NoiseModulation(activation=LeakyReLU(0.20))(x)
+        # 4. Second AdaIN block.
+        y = Dense(units=2*n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 1, :])
+        x = AdaptiveInstanceModulation()([x, y])
         return x
 
     def _add_next_block(self, x, w_latent, stage):
-        n_filters = self._filters_at_stage(stage)
+        n_filters = self._compute_filters_at_stage(stage)
         # 1. Double resolution operation.
         x = UpSampling2D()(x)
         # 2. First conv (3x3) layer + noise.
@@ -81,20 +80,18 @@ class GeneratorConstructorStyle:
         x = AdaptiveInstanceModulation()([x, y])
         return x
 
-    def _construct_initial_block(self, w_latent):
-        n_filters = self._filters_at_stage(1)
-        # 1. Constant layer + noise.
-        x = Constant(shape=(1, self.input_res, self.input_res, n_filters), initializer='ones')(w_latent)
-        x = NoiseModulation(activation=LeakyReLU(0.20))(x)
-        # 2. First AdaIN block.
-        y = Dense(units=2*n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 0, :])
-        x = AdaptiveInstanceModulation()([x, y])
-        # 3. Conv (3x3) layer + noise.
-        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
-        x = NoiseModulation(activation=LeakyReLU(0.20))(x)
-        # 4. Second AdaIN block.
-        y = Dense(units=2*n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 1, :])
-        x = AdaptiveInstanceModulation()([x, y])
+    def _compile_model(self, model):
+        lr = self.adam_params["lr"]
+        beta_1 = self.adam_params["beta_1"]
+        beta_2 = self.adam_params["beta_2"]
+        epsilon = self.adam_params["epsilon"]
+        model.compile(optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon))
+
+    @staticmethod
+    def _add_to_rgb(x, y):
+        x = Conv2D(filters=3, kernel_size=(1, 1))(x)
+        if y is not None:
+            x += y
         return x
 
     def _construct_mapping_network(self):
@@ -105,12 +102,12 @@ class GeneratorConstructorStyle:
 
     def _add_mapping_layers(self, x):
         for k in range(self.n_dense_layers):
-            x = Dense(units=self.n_dense_units, activation=LeakyReLU(0.20), kernel_initializer=self.kernel_init,
+            x = Dense(units=self.latent_size, activation=LeakyReLU(0.20), kernel_initializer=self.kernel_init,
                       name="mn_fc_%s" % str(k + 1))(x)
         return x
 
     def _broadcast_disentangled_latents(self, x):
         return backend.tile(x[:, np.newaxis], [1, self.n_styles, 1])
 
-    def _filters_at_stage(self, stage):
+    def _compute_filters_at_stage(self, stage):
         return np.minimum(int(self.n_base_filters/(2.0**stage)), self.n_max_filters)

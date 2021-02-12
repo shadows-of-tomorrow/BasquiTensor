@@ -4,7 +4,7 @@ from datetime import datetime
 os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from gans.network_constructor import NetworkConstructor
+from gans.network_factory import NetworkFactory
 from training.network_trainer import NetworkTrainer
 from processing.image_processor import ImageProcessor
 from processing.config_processor import ConfigProcessor
@@ -38,7 +38,7 @@ class Engine:
     def _construct_networks(configs):
         print("Constructing networks...")
         network_configs = [config['network_parameters'] for config in configs]
-        network_constructors = [NetworkConstructor(**network_config) for network_config in network_configs]
+        network_constructors = [NetworkFactory(**network_config) for network_config in network_configs]
         networks_list = [network_constructor.run() for network_constructor in network_constructors]
         return networks_list
 

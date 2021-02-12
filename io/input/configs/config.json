@@ -1,23 +1,23 @@
 {
   "network_parameters":
   {
-    "model": "StyleGANV2",
-    "n_base_filters": 8192,
+    "model": "StyleGAN",
+    "n_base_filters": 1024,
     "n_max_filters": 512,
-    "n_dense_layers": 8,
-    "latent_size": 512,
-    "output_res": 64,
+    "n_dense_layers": 4,
+    "latent_size": 128,
+    "output_res": 128,
     "adam_params": {"lr": 0.0001, "beta_1": 0.00, "beta_2": 0.90, "epsilon": 10e-8}
   },
   "training_parameters":
   {
     "monitor_fid": "True",
     "n_batches": [16],
-    "n_epochs": [10000]
+    "n_epochs": [100]
   },
   "directories":
   {
     "input": "io/input/images/celeb_a/128x128",
-    "output": "io/output/celeb_a_64x64"
+    "output": "io/output/celeb_a_128x128"
   }
 }

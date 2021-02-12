@@ -87,7 +87,7 @@ class TrainingMonitor:
         plt.savefig(file_name)
         plt.close()
 
-    def store_networks(self, discriminator, generator, composite, fade_in):
+    def store_networks(self, discriminator, generator, fade_in):
         """ Stores Keras networks for later use. """
         # 1. Extract relevant fields.
         dir_out = os.path.join(self.image_processor.dir_out, 'networks')
@@ -102,4 +102,3 @@ class TrainingMonitor:
         # 3. Store networks.
         discriminator.save(os.path.join(file_dir, f"discriminator.h5"))
         generator.save(os.path.join(file_dir, f"generator.h5"))
-        composite.save(os.path.join(file_dir, f"composite.h5"))

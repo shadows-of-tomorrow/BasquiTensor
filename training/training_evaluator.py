@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 class TrainingEvaluator:
 
     def __init__(self, image_processor=None):
-        self.loss_burn_in = 700
+        self.loss_burn_in = 1000
         self.fid_burn_in = 0
         self.image_processor = image_processor
         self.d_loss_real = 'd_loss_real'
@@ -73,5 +73,5 @@ class TrainingEvaluator:
         return {k: [dic[k] for dic in lod] for k in lod[0]}
 
 
-dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\celeb_a_64x64"
+dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\celeb_a_128x128"
 TrainingEvaluator().plot_loss(dir_loss)
