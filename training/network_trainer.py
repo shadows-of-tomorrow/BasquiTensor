@@ -1,6 +1,8 @@
 import numpy as np
 from networks.utils import update_fade_in
+from networks.utils import update_smoothed_weights
 from networks.utils import generate_latent_points
+from networks.utils import clone_subclassed_model
 from training.training_monitor import TrainingMonitor
 
 
@@ -49,9 +51,11 @@ class NetworkTrainer:
     def _train_epochs(self, generator, discriminator, n_epoch, n_batch, fade_in):
         # 1. Compute number of training steps.
         n_steps = int(self.n_imgs / n_batch) * n_epoch
-        # 2 Get shape of image.
+        # 2. Get shape of image.
         latent_dim = generator.input.shape[1]
         shape = tuple(generator.output.shape[1:-1].as_list())
+        # 3. Clone generator.
+        smoothed_generator = clone_subclassed_model(generator)
         # 3. Train models for n_steps iterations.
         for k in range(n_steps):
             # 3.1 Update alpha for weighted sum.
@@ -62,11 +66,14 @@ class NetworkTrainer:
             # 3.4 Train generator.
             z_latent = generate_latent_points(latent_dim, n_batch)
             g_loss = generator.train_on_batch(z_latent, discriminator, n_batch)
+            # 3.5 Update "smoothed" generator weights.
+            update_smoothed_weights(smoothed_generator, generator)
             # 3.5 Monitor progress.
             loss_dict = {**d_loss, **g_loss}
             self.monitor.store_losses(shape[0], fade_in, **loss_dict)
             if k % 100 == 0:
-                self.monitor.store_fid(shape[0], fade_in, generator)
+                self.monitor.store_fid(shape[0], fade_in, smoothed_generator)
             if k % 100 == 0:
-                self.monitor.store_plots(generator, n_batch * k, fade_in)
-        self.monitor.store_networks(discriminator, generator, fade_in)
+                self.monitor.store_plots(smoothed_generator, n_batch * k, fade_in)
+            if k % 10000 == 0:
+                self.monitor.store_networks(discriminator, generator, fade_in)

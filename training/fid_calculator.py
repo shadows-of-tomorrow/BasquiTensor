@@ -7,7 +7,7 @@ from tensorflow.keras.applications.inception_v3 import InceptionV3
 
 class FIDCalculator:
 
-    def __init__(self, image_processor, fid_res=299, m=128, n=10000, d=2048):
+    def __init__(self, image_processor, fid_res=256, m=128, n=10000, d=2048):
         print(f"Constructing Frechet Inception Distance calculator...")
         self.image_processor = image_processor
         self.m, self.n, self.d = m, n, d

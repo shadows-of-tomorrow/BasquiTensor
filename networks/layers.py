@@ -17,15 +17,8 @@ class DenseEQL(Dense):
     def build(self, input_shape):
         super().build(input_shape)
         fan_in = np.prod(input_shape[1:])
-        self.he_const = self.gain / np.sqrt(fan_in)
-
-    def call(self, inputs, **kwargs):
-        output = backend.dot(inputs, self.kernel * self.he_const)
-        if self.use_bias:
-            output = backend.bias_add(output, self.bias, data_format='channels_last')
-        if self.activation is not None:
-            output = self.activation(output)
-        return output
+        he_const = self.gain / np.sqrt(fan_in)
+        self.kernel = self.kernel * he_const
 
 
 class Conv2DEQL(Conv2D):
@@ -37,16 +30,8 @@ class Conv2DEQL(Conv2D):
     def build(self, input_shape):
         super().build(input_shape)
         fan_in = np.prod(input_shape[1:])
-        self.he_const = self.gain / np.sqrt(fan_in)
-
-    def call(self, inputs, **kwargs):
-        output = backend.conv2d(inputs, self.kernel * self.he_const, strides=self.strides, padding=self.padding,
-                                data_format=self.data_format, dilation_rate=self.dilation_rate)
-        if self.use_bias:
-            output = backend.bias_add(output, self.bias, data_format=self.data_format)
-        if self.activation is not None:
-            output = self.activation(output)
-        return output
+        he_const = self.gain / np.sqrt(fan_in)
+        self.kernel = self.kernel * he_const
 
 
 class AdaptiveInstanceModulation(Layer):
@@ -86,9 +71,9 @@ class NoiseModulation(Layer):
         return config
 
     def build(self, input_shape):
+        super().build(input_shape)
         self.kernel = self.add_weight(name='kernel', shape=[input_shape[3]], initializer='zeros', trainable=True)
         self.bias = self.add_weight(name='bias', shape=[input_shape[3]], initializer='zeros', trainable=True)
-        super().build(input_shape)
 
     def call(self, inputs, **kwargs):
         noise = tf.random.normal(shape=[tf.shape(inputs)[0], inputs.shape[1], inputs.shape[2], 1])
@@ -110,11 +95,12 @@ class Constant(Layer):
     def get_config(self):
         config = super().get_config().copy()
         config.update({'shape': self.shape})
+        config.update({'initializer': self.initializer})
         return config
 
     def build(self, input_shape):
-        self.kernel = self.add_weight(name='kernel', shape=self.shape, initializer=self.initializer, trainable=True)
         super(Constant, self).build(input_shape)
+        self.kernel = self.add_weight(name='kernel', shape=self.shape, initializer=self.initializer, trainable=True)
 
     def call(self, inputs, **kwargs):
         return tf.tile(self.kernel, [tf.shape(inputs)[0], 1, 1, 1])

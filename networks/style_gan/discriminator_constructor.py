@@ -1,16 +1,14 @@
 import numpy as np
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input
-#from tensorflow.keras.layers import Dense
-#from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import AveragePooling2D
 from tensorflow.keras.initializers import HeNormal
 from networks.style_gan.discriminator import Discriminator
 from networks.layers import MinibatchStDev
-from networks.layers import DenseEQL
-from networks.layers import Conv2DEQL
 
 
 class DiscriminatorConstructorStyle:
@@ -94,17 +92,19 @@ class DiscriminatorConstructorStyle:
 
     def _add_convolutional_layers(self, x, n_filters, kernel_size, n_layers):
         for _ in range(n_layers):
-            x = Conv2DEQL(filters=n_filters, kernel_size=(kernel_size, kernel_size), padding='same',
-                          activation=LeakyReLU(0.20))(x)
+            x = Conv2D(filters=n_filters,
+                       kernel_size=(kernel_size, kernel_size),
+                       padding='same',
+                       kernel_initializer=self.kernel_init,
+                       activation=LeakyReLU(0.20))(x)
         return x
 
     def _add_dense_layer(self, x, units, flatten, use_activation):
         if flatten:
             x = Flatten()(x)
+        x = Dense(units=units, kernel_initializer=self.kernel_init)(x)
         if use_activation:
-            x = DenseEQL(units=units, activation=LeakyReLU(0.20))(x)
-        else:
-            x = DenseEQL(units=units)(x)
+            x = LeakyReLU(0.20)(x)
         return x
 
     def _add_from_rgb_layer(self, x, n_filters):
