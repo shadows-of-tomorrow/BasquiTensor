@@ -8,14 +8,29 @@ from training.fid_calculator import FIDCalculator
 
 class TrainingMonitor:
     """ Monitors the training performance. """
+
     def __init__(self, image_processor, monitor_fid=True):
         self.n_plot_samples = 25
         self.image_processor = image_processor
         self.monitor_fid = monitor_fid
         if self.monitor_fid:
             self.ffid_calculator = FIDCalculator(self.image_processor)
+        self.loss_store_ticks = 1
+        self.fid_store_ticks = 100
+        self.plot_store_ticks = 100
+        self.network_store_ticks = 10000
 
-    def store_fid(self, res, fade_in, generator):
+    def run(self, discriminator, generator, smooth_generator, res, fade_in, n_step, **loss_dict):
+        if n_step % self.loss_store_ticks == 0:
+            self.store_losses(res, fade_in, **loss_dict)
+        if n_step % self.fid_store_ticks == 0:
+            self.store_fid(generator, fade_in, res)
+        if n_step % self.plot_store_ticks == 0:
+            self.store_plots(generator, n_step, fade_in)
+        if n_step % self.network_store_ticks == 0:
+            self.store_networks(discriminator, generator, smooth_generator, fade_in)
+
+    def store_fid(self, generator, res, fade_in):
         if self.monitor_fid:
             fid = self.ffid_calculator.compute_fast_fid(generator)
             message = f"Resolution:{res},Fade-in:{fade_in},FID:{fid},\n"
@@ -50,17 +65,25 @@ class TrainingMonitor:
         """ Generates and stores plots based on current generator. """
         # 1. Extract relevant fields.
         dir_out = os.path.join(self.image_processor.dir_out, 'plots')
-        latent_dim = generator.input.shape[1]
         res = generator.output.shape[1]
         # 2. Generate and scale fake images.
         n_fake = int(np.floor(self.n_plot_samples / 2))
-        x_fake, _ = generate_fake_samples(generator, latent_dim, n_fake)
-        x_fake = self.image_processor.shift_arr(x_fake, min_max=True)
+        x_fake = generate_fake_samples(
+            image_processor=self.image_processor,
+            generator=generator,
+            n_samples=n_fake,
+            shape=(res, res),
+            transform_type="min_max_to_zero_one"
+        )
         x_fake = [x_fake[k] for k in range(len(x_fake))]
         # 3. Generate and scale real images.
         n_real = int(np.floor(self.n_plot_samples / 2))
-        x_real, _ = generate_real_samples(self.image_processor, n_real, (res, res))
-        x_real = self.image_processor.shift_arr(x_real, min_max=True)
+        x_real = generate_real_samples(
+            image_processor=self.image_processor,
+            n_samples=n_real,
+            shape=(res, res),
+            transform_type="old_to_zero_one"
+        )
         x_real = [x_real[k] for k in range(len(x_real))]
         # 4. Generate "border" images.
         n_border = int(np.sqrt(self.n_plot_samples))
@@ -71,9 +94,9 @@ class TrainingMonitor:
         for k in range(self.n_plot_samples):
             plt.subplot(n_grid, n_grid, k + 1)
             plt.axis('off')
-            if k % n_grid == 0 or (k-1) % n_grid == 0:
+            if k % n_grid == 0 or (k - 1) % n_grid == 0:
                 plt.imshow(x_fake.pop())
-            elif (k-2) % n_grid == 0:
+            elif (k - 2) % n_grid == 0:
                 plt.imshow(x_border.pop())
             else:
                 plt.imshow(x_real.pop())
@@ -90,7 +113,7 @@ class TrainingMonitor:
         plt.savefig(file_name)
         plt.close()
 
-    def store_networks(self, discriminator, generator, fade_in):
+    def store_networks(self, discriminator, generator, generator_smoothed, fade_in):
         """ Stores Keras networks for later use. """
         # 1. Extract relevant fields.
         dir_out = os.path.join(self.image_processor.dir_out, 'networks')
@@ -105,3 +128,4 @@ class TrainingMonitor:
         # 3. Store networks.
         discriminator.save(os.path.join(file_dir, f"discriminator.h5"))
         generator.save(os.path.join(file_dir, f"generator.h5"))
+        generator_smoothed.save(os.path.join(file_dir, "generator_smoothed.h5"))

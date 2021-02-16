@@ -2,61 +2,72 @@ import os
 import cv2
 import numpy as np
 from PIL import Image
+from numba import jit
 
 
 class ImageProcessor:
     """ Handles the reading and processing of images. """
-    def __init__(self, dir_in=None, dir_out=None, x_range=(0, 255), y_range=(-1, 1)):
+    def __init__(self, dir_in=None, dir_out=None, old_range=(0, 255), new_range=(-1, 1)):
         self.dir_in = dir_in
         self.dir_out = dir_out
+        self.n_images = len(os.listdir(self.dir_in))
         self.file_names = os.listdir(self.dir_in)
-        self.x_range = x_range
-        self.y_range = y_range
-        self.a, self.b = self.calc_shift_coeff(self.x_range, self.y_range)
+        self.old_range = old_range
+        self.new_range = new_range
+        self.a, self.b = self.compute_shift_coefficients(self.old_range, self.new_range)
 
-    def sample_batch(self, batch_size):
-        batch = []
-        batch_file_names = np.random.choice(self.file_names, batch_size)
-        for batch_file_name in batch_file_names:
-            img_dir = os.path.join(self.dir_in, batch_file_name)
-            arr = self.read_img(img_dir)
-            arr = self.shift_arr(arr)
-            batch.append(arr)
-        return np.stack(batch, axis=0)
+    def sample_numpy_array(self, n_samples):
+        numpy_arrays = []
+        sampled_file_names = np.random.choice(self.file_names, n_samples)
+        for sample_file_name in sampled_file_names:
+            sample_dir = os.path.join(self.dir_in, sample_file_name)
+            numpy_array = self.read_img(sample_dir)
+            numpy_arrays.append(numpy_array)
+        return np.stack(numpy_arrays, axis=0)
 
-    def count_imgs(self):
-        return len(os.listdir(self.dir_in))
-
-    @staticmethod
-    def resize_imgs(imgs, shape):
-        imgs_out = []
-        for img in imgs:
-            img_new = cv2.resize(src=img, dsize=shape, interpolation=cv2.INTER_NEAREST)
-            imgs_out.append(img_new)
-        return imgs_out
+    def transform_numpy_array(self, numpy_array, transform_type):
+        if transform_type == "old_to_new":
+            return self.shift_numpy_array(numpy_array, self.a, self.b)
+        elif transform_type == "old_to_zero_one":
+            return self.shift_numpy_array(numpy_array, self.old_range[0], self.old_range[1]-self.old_range[0])
+        elif transform_type == "min_max_to_zero_one":
+            min_value = numpy_array.min()
+            max_value = numpy_array.max()
+            return self.shift_numpy_array(numpy_array, min_value, max_value-min_value)
 
     @staticmethod
-    def resize_np_array(arr, shape):  # (n_samples, width, height, n_channels)
-        sub_arrs = []
-        for k in range(arr.shape[0]):
-            sub_arr = cv2.resize(src=arr[k], dsize=shape, interpolation=cv2.INTER_NEAREST)
-            sub_arrs.append(sub_arr)
-        return np.stack(sub_arrs, axis=0)
+    def resize_numpy_array(numpy_array, shape):  # (n_samples, width, height, n_channels)
+        resized_arrays = []
+        for k in range(numpy_array.shape[0]):
+            temp_array = cv2.resize(src=numpy_array[k], dsize=shape, interpolation=cv2.INTER_NEAREST)
+            resized_arrays.append(temp_array)
+        return np.stack(resized_arrays, axis=0)
 
     @staticmethod
     def read_img(dir_img):
         img = Image.open(dir_img)
         return np.asarray(img)
 
-    def shift_arr(self, arr, min_max=False):
-        if min_max is False:
-            return (arr - self.a) / self.b
-        else:
-            return (arr - arr.min()) / (arr.max() - arr.min())
+    @staticmethod
+    def resize_images(images, shape):
+        imgs_out = []
+        for image in images:
+            img_new = cv2.resize(src=image, dsize=shape, interpolation=cv2.INTER_NEAREST)
+            imgs_out.append(img_new)
+        return imgs_out
 
     @staticmethod
-    def calc_shift_coeff(x, y):
-        """ Computes the coefficients used to shift an array. """
-        a = (x[1] * (y[0] / y[1]) - x[0]) / (y[0] / y[1] - 1.0)  # Location
-        b = (x[0] - x[1]) / (y[0] - y[1])  # Scale
+    @jit(nopython=True)
+    def shift_numpy_array(numpy_array, a, b):
+        return (numpy_array - a) / b
+
+    @staticmethod
+    @jit(nopython=True)
+    def reverse_shift_numpy_array(numpy_array, a, b):
+        return numpy_array * b + a
+
+    @staticmethod
+    def compute_shift_coefficients(old_range, new_range):
+        a = (old_range[1] * (new_range[0] / new_range[1]) - old_range[0]) / (new_range[0] / new_range[1] - 1.0)
+        b = (old_range[0] - old_range[1]) / (new_range[0] - new_range[1])
         return a, b

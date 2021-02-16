@@ -13,12 +13,13 @@ class TrainingEvaluator:
         self.g_loss = 'g_loss'
         self.gp_loss = 'gp_loss'
         self.fid = 'FID'
+        self.time = 'time_sec'
 
     def plot_loss(self, loss_dir):
         loss_dict = self._read_txt_file(loss_dir, 'loss.txt')
         fid_dict = self._read_txt_file(loss_dir, 'fid.txt')
         plt.suptitle("Training Evaluation")
-        plt.subplot(2, 2, 1)
+        plt.subplot(2, 3, 1)
         d_loss_real = self._scale_losses(loss_dict[self.d_loss_real][self.loss_burn_in:])
         d_loss_fake = self._scale_losses(loss_dict[self.d_loss_fake][self.loss_burn_in:])
         d_loss = self._scale_losses(self._add_d_losses(loss_dict)[self.loss_burn_in:])
@@ -28,19 +29,25 @@ class TrainingEvaluator:
         plt.plot(d_loss, label='discriminator loss (total)', color='black', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
-        plt.subplot(2, 2, 2)
+        plt.subplot(2, 3, 2)
         g_loss = self._scale_losses(loss_dict[self.g_loss][self.loss_burn_in:])
         plt.title("Generator Loss")
         plt.plot(g_loss, label='generator loss', color='red', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
-        plt.subplot(2, 2, 3)
+        plt.subplot(2, 3, 3)
         gp_loss = self._scale_losses(loss_dict[self.gp_loss][self.loss_burn_in:])
         plt.title("Gradient Penalty")
         plt.plot(gp_loss, label='gradient penalty', color='purple', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
-        plt.subplot(2, 2, 4)
+        plt.subplot(2, 3, 4)
+        plt.title("Training Time (sec)")
+        time_loss = loss_dict[self.time][self.loss_burn_in:]
+        plt.plot(time_loss, color='black', linewidth=0.25)
+        plt.grid()
+        plt.tight_layout()
+        plt.subplot(2, 3, 5)
         fid_loss = fid_dict[self.fid][self.fid_burn_in:]
         plt.title("Frechet Inception Distance")
         plt.plot(fid_loss, label='Frechet Inception Distance', color='green', linewidth=0.25)

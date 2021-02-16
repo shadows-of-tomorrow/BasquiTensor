@@ -17,10 +17,20 @@ class Discriminator(Model):
         super().compile(optimizer=optimizer)
 
     def train_on_batch(self, image_processor, generator, batch_size, shape):
-        latent_dim = generator.input.shape[1]
         for k in range(self.d_steps):
-            x_fake, _ = generate_fake_samples(generator, latent_dim, batch_size)
-            x_real, _ = generate_real_samples(image_processor, batch_size, shape)
+            x_fake = generate_fake_samples(
+                image_processor=image_processor,
+                generator=generator,
+                n_samples=batch_size,
+                shape=shape,
+                transform_type=None
+            )
+            x_real = generate_real_samples(
+                image_processor=image_processor,
+                n_samples=batch_size,
+                shape=shape,
+                transform_type='old_to_new'
+            )
             with tf.GradientTape() as tape:
                 # 1. Compute loss on real examples.
                 y_real = self(x_real, training=True)

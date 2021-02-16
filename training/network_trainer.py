@@ -1,4 +1,4 @@
-import numpy as np
+import time
 from networks.utils import update_fade_in
 from networks.utils import update_smoothed_weights
 from networks.utils import generate_latent_points
@@ -12,10 +12,11 @@ class NetworkTrainer:
     def __init__(self, image_processor, **training_config):
         self.stage = 0
         self.image_processor = image_processor
-        self.monitor = TrainingMonitor(self.image_processor, training_config["monitor_fid"] == "True")
-        self.n_imgs = image_processor.count_imgs()
+        self.training_monitor = TrainingMonitor(self.image_processor, training_config["monitor_fid"] == "True")
+        self.n_images = image_processor.n_images
         self.n_batches = training_config['n_batches']
         self.n_epochs = training_config['n_epochs']
+        self.start_time = time.time()
 
     def run(self, networks):
         # 0. Unpack networks.
@@ -50,10 +51,11 @@ class NetworkTrainer:
 
     def _train_epochs(self, generator, discriminator, n_epoch, n_batch, fade_in):
         # 1. Compute number of training steps.
-        n_steps = int(self.n_imgs / n_batch) * n_epoch
+        n_steps = int(self.n_images / n_batch) * n_epoch
         # 2. Get shape of image.
         latent_dim = generator.input.shape[1]
         shape = tuple(generator.output.shape[1:-1].as_list())
+        res = shape[0]
         # 3. Clone generator.
         smoothed_generator = clone_subclassed_model(generator)
         # 3. Train models for n_steps iterations.
@@ -68,12 +70,7 @@ class NetworkTrainer:
             g_loss = generator.train_on_batch(z_latent, discriminator, n_batch)
             # 3.5 Update "smoothed" generator weights.
             update_smoothed_weights(smoothed_generator, generator)
-            # 3.5 Monitor progress.
-            loss_dict = {**d_loss, **g_loss}
-            self.monitor.store_losses(shape[0], fade_in, **loss_dict)
-            if k % 100 == 0:
-                self.monitor.store_fid(shape[0], fade_in, smoothed_generator)
-            if k % 100 == 0:
-                self.monitor.store_plots(smoothed_generator, n_batch * k, fade_in)
-            if k % 10000 == 0:
-                self.monitor.store_networks(discriminator, generator, fade_in)
+            # 3.6 Construct loss dict.
+            loss_dict = {**d_loss, **g_loss, **{'time': f"{time.time()-self.start_time}"}}
+            # 3.7 Monitor training process.
+            self.training_monitor.run(discriminator, generator, smoothed_generator, res, fade_in, k, **loss_dict)

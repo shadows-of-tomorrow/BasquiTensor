@@ -1,4 +1,5 @@
 import numpy as np
+from tensorflow.keras import backend
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
@@ -27,6 +28,7 @@ class DiscriminatorConstructorStyle:
 
     def run(self):
         # 1. Construct initial block.
+        backend.set_floatx('float32')
         input_layer, x, y = self._construct_initial_block()
         # 2. Add intermediate blocks.
         for stage in range(2, self.n_blocks):

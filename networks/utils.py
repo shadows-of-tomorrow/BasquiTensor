@@ -1,7 +1,8 @@
 import numpy as np
+import tensorflow as tf
+from networks.layers import WeightedSum
 from tensorflow.keras import backend
 from tensorflow.keras.models import clone_model
-from networks.layers import WeightedSum
 
 
 def update_fade_in(models, step, n_steps):
@@ -25,23 +26,27 @@ def clone_subclassed_model(model):
     return cloned_model
 
 
-def generate_real_samples(image_provider, n_samples, shape):
-    x = image_provider.sample_batch(n_samples)
-    x = image_provider.resize_imgs(x, shape)
-    x = np.asarray(x)
-    y = np.ones((n_samples, 1))
-    return x, y
-
-
-def generate_latent_points(latent_dim, n_samples):
+def generate_latent_points(latent_dim, n_samples, dtype='float32'):
     z = np.random.normal(size=(n_samples, latent_dim))
     r = np.random.uniform(size=(n_samples, 1)) ** (1.0 / latent_dim)
     norm = np.reshape(np.sqrt(np.sum(z ** 2, 1)), newshape=(n_samples, 1))
-    return r * z / norm
+    return (r * z / norm).astype(dtype)
 
 
-def generate_fake_samples(generator, latent_dim, n_samples):
-    z = generate_latent_points(latent_dim, n_samples)
-    x = generator.predict(z)
-    y = -np.ones((n_samples, 1))
-    return x, y
+def generate_fake_samples(image_processor, generator, n_samples, shape, dtype='float32', transform_type=None):
+    z = generate_latent_points(generator.input_shape[1], n_samples, dtype)
+    x_fake = generator.predict(z)
+    if transform_type is not None:
+        x_fake = image_processor.transform_numpy_array(x_fake, transform_type)
+    if x_fake.shape[1] != shape[0]:
+        x_fake = image_processor.resize_numpy_array(x_fake, shape)
+    return x_fake
+
+
+def generate_real_samples(image_processor, n_samples, shape, dtype='float32', transform_type="old_to_new"):
+    x_real = image_processor.sample_numpy_array(n_samples)
+    if transform_type is not None:
+        x_real = image_processor.transform_numpy_array(x_real, transform_type)
+    if x_real.shape[1] != shape[0]:
+        x_real = image_processor.resize_numpy_array(x_real, shape)
+    return x_real.astype(dtype)

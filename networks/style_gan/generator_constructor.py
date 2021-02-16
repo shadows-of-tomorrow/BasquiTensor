@@ -33,6 +33,7 @@ class GeneratorConstructorStyle:
 
     def run(self):
         # 1. Construct mapping network.
+        backend.set_floatx('float32')
         z_latent, w_latent = self._construct_mapping_network()
         # 3. Construct initial block.
         x = self._construct_initial_block(w_latent)

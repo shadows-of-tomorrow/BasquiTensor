@@ -76,7 +76,7 @@ class NoiseModulation(Layer):
         self.bias = self.add_weight(name='bias', shape=[input_shape[3]], initializer='zeros', trainable=True)
 
     def call(self, inputs, **kwargs):
-        noise = tf.random.normal(shape=[tf.shape(inputs)[0], inputs.shape[1], inputs.shape[2], 1])
+        noise = tf.random.normal(shape=[tf.shape(inputs)[0], inputs.shape[1], inputs.shape[2], 1], dtype='float32')
         kernel = tf.reshape(self.kernel, [1, 1, 1, -1])
         bias = tf.reshape(self.bias, [1, 1, 1, -1])
         output = inputs + (kernel * noise + bias)
