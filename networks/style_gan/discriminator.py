@@ -2,10 +2,10 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from networks.utils import generate_fake_samples
 from networks.utils import generate_real_samples
+from processing.image_augmentor import ImageAugmentor
 
 
 class Discriminator(Model):
-    """ Wraps keras model to incorporate gradient penalty. """
 
     def __init__(self, *args, **kwargs):
         super(Discriminator, self).__init__(*args, **kwargs)
@@ -16,8 +16,9 @@ class Discriminator(Model):
     def compile(self, optimizer):
         super().compile(optimizer=optimizer)
 
-    def train_on_batch(self, image_processor, generator, batch_size, shape):
+    def train_on_batch(self, image_processor, generator, batch_size, shape, image_augmentor=ImageAugmentor()):
         for k in range(self.d_steps):
+            # 1. Generate real and fake images (non-trainable generator).
             x_fake = generate_fake_samples(
                 image_processor=image_processor,
                 generator=generator,
@@ -31,6 +32,9 @@ class Discriminator(Model):
                 shape=shape,
                 transform_type='old_to_new'
             )
+            # 2. Apply image transformations.
+            x_fake = image_augmentor.run(x_fake, is_tensor=False)
+            x_real = image_augmentor.run(x_real, is_tensor=False)
             with tf.GradientTape() as tape:
                 # 1. Compute loss on real examples.
                 y_real = self(x_real, training=True)

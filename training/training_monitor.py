@@ -20,15 +20,15 @@ class TrainingMonitor:
         self.plot_store_ticks = 100
         self.network_store_ticks = 10000
 
-    def run(self, discriminator, generator, smooth_generator, res, fade_in, n_step, **loss_dict):
-        if n_step % self.loss_store_ticks == 0:
+    def run(self, discriminator, generator, generator_smoothed, res, fade_in, n_step, done, **loss_dict):
+        if n_step % self.loss_store_ticks == 0 or done:
             self.store_losses(res, fade_in, **loss_dict)
-        if n_step % self.fid_store_ticks == 0:
-            self.store_fid(generator, fade_in, res)
-        if n_step % self.plot_store_ticks == 0:
-            self.store_plots(generator, n_step, fade_in)
-        if n_step % self.network_store_ticks == 0:
-            self.store_networks(discriminator, generator, smooth_generator, fade_in)
+        if n_step % self.fid_store_ticks == 0 or done:
+            self.store_fid(generator_smoothed, fade_in, res)
+        if n_step % self.plot_store_ticks == 0 or done:
+            self.store_plots(generator_smoothed, n_step, fade_in)
+        if n_step % self.network_store_ticks == 0 or done:
+            self.store_networks(discriminator, generator, generator_smoothed, fade_in)
 
     def store_fid(self, generator, res, fade_in):
         if self.monitor_fid:

@@ -1,5 +1,4 @@
 import numpy as np
-import tensorflow as tf
 from networks.layers import WeightedSum
 from tensorflow.keras import backend
 from tensorflow.keras.models import clone_model
@@ -26,7 +25,7 @@ def clone_subclassed_model(model):
     return cloned_model
 
 
-def generate_latent_points(latent_dim, n_samples, dtype='float32'):
+def generate_latent_vectors(latent_dim, n_samples, dtype='float32'):
     z = np.random.normal(size=(n_samples, latent_dim))
     r = np.random.uniform(size=(n_samples, 1)) ** (1.0 / latent_dim)
     norm = np.reshape(np.sqrt(np.sum(z ** 2, 1)), newshape=(n_samples, 1))
@@ -34,8 +33,8 @@ def generate_latent_points(latent_dim, n_samples, dtype='float32'):
 
 
 def generate_fake_samples(image_processor, generator, n_samples, shape, dtype='float32', transform_type=None):
-    z = generate_latent_points(generator.input_shape[1], n_samples, dtype)
-    x_fake = generator.predict(z)
+    z = generate_latent_vectors(generator.input_shape[1], n_samples, dtype)
+    x_fake = generator(z, training=False).numpy()
     if transform_type is not None:
         x_fake = image_processor.transform_numpy_array(x_fake, transform_type)
     if x_fake.shape[1] != shape[0]:

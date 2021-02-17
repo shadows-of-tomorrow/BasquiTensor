@@ -2,8 +2,8 @@
   "network_parameters":
   {
     "model": "StyleGAN",
-    "output_res": 256,
-    "latent_size": 256,
+    "output_res": 128,
+    "latent_size": 512,
     "n_base_filters": 2048,
     "n_max_filters": 512,
     "n_dense_layers": 8,
@@ -17,12 +17,12 @@
   "training_parameters":
   {
     "monitor_fid": "True",
-    "n_batches": [16],
-    "n_epochs": [100]
+    "n_batches": [32],
+    "n_images": [3000000]
   },
   "directories":
   {
-    "input": "io/input/images/celeb_a/256x256",
-    "output": "io/output/celeb_a_256x256"
+    "input": "io/input/images/celeb_a/128x128",
+    "output": "io/output/celeb_a_128x128_aug"
   }
 }
