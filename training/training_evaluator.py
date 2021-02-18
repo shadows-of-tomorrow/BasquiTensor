@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 class TrainingEvaluator:
 
     def __init__(self, image_processor=None):
-        self.loss_burn_in = -10
+        self.loss_burn_in = -500
         self.fid_burn_in = 0
         self.image_processor = image_processor
         self.d_loss_real = 'd_loss_real'
@@ -15,6 +15,8 @@ class TrainingEvaluator:
         self.fid = 'FID'
         self.time = 'time'
         self.memory = 'memory'
+        self.rt = 'rt'
+        self.p_augment = 'p_augment'
 
     def plot_loss(self, loss_dir):
         loss_dict = self._read_txt_file(loss_dir, 'loss.txt')
@@ -49,15 +51,21 @@ class TrainingEvaluator:
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 5)
-        plt.title("Virtual Memory Usage (%)")
-        time_loss = loss_dict[self.memory][self.loss_burn_in:]
-        plt.plot(time_loss, color='black', linewidth=0.25)
+        plt.title("Augmentation Monitor")
+        rt = loss_dict[self.rt][self.loss_burn_in:]
+        p_augment = loss_dict[self.p_augment][self.loss_burn_in:]
+        plt.plot(rt, color='blue', label='rt', linewidth=0.50)
+        plt.plot(p_augment, color='orange', label='p_augment', linewidth=0.75)
+        plt.ylim((0.00, 1.00))
+        plt.legend()
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 6)
         fid_loss = fid_dict[self.fid][self.fid_burn_in:]
         plt.title("Fast FID")
         plt.plot(fid_loss, label='Frechet Inception Distance', color='black', linewidth=0.25)
+        plt.yticks([0, 50, 100, 200])
+        plt.ylim((0, 200))
         plt.grid()
         plt.tight_layout()
         plt.show()
@@ -110,5 +118,5 @@ class TrainingEvaluator:
         return losses
 
 
-dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\celeb_a_128x128_aug"
+dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\bob_ross_128x128"
 TrainingEvaluator().plot_loss(dir_loss)

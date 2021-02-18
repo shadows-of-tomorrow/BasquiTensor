@@ -3,10 +3,10 @@
   {
     "model": "StyleGAN",
     "output_res": 128,
-    "latent_size": 512,
-    "n_base_filters": 2048,
+    "latent_size": 128,
+    "n_base_filters": 1024,
     "n_max_filters": 512,
-    "n_dense_layers": 8,
+    "n_dense_layers": 4,
     "adam_params": {
       "lr": 0.0001,
       "beta_1": 0.00,
@@ -22,7 +22,7 @@
   },
   "directories":
   {
-    "input": "io/input/images/celeb_a/128x128",
-    "output": "io/output/celeb_a_128x128_aug"
+    "input": "io/input/images/bob_ross",
+    "output": "io/output/bob_ross_128x128"
   }
 }

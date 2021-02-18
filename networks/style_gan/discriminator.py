@@ -2,7 +2,6 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from networks.utils import generate_fake_samples
 from networks.utils import generate_real_samples
-from processing.image_augmentor import ImageAugmentor
 
 
 class Discriminator(Model):
@@ -12,11 +11,12 @@ class Discriminator(Model):
         self.d_steps = 1
         self.dp_weight = 0.001
         self.gp_weight = 10.0
+        self.n_step_tracker = 1
 
     def compile(self, optimizer):
         super().compile(optimizer=optimizer)
 
-    def train_on_batch(self, image_processor, generator, batch_size, shape, image_augmentor=ImageAugmentor()):
+    def train_on_batch(self, image_processor, generator, batch_size, shape, image_augmenter):
         for k in range(self.d_steps):
             # 1. Generate real and fake images (non-trainable generator).
             x_fake = generate_fake_samples(
@@ -33,8 +33,8 @@ class Discriminator(Model):
                 transform_type='old_to_new'
             )
             # 2. Apply image transformations.
-            x_fake = image_augmentor.run(x_fake, is_tensor=False)
-            x_real = image_augmentor.run(x_real, is_tensor=False)
+            x_fake = image_augmenter.run(x_fake, is_tensor=False)
+            x_real = image_augmenter.run(x_real, is_tensor=False)
             with tf.GradientTape() as tape:
                 # 1. Compute loss on real examples.
                 y_real = self(x_real, training=True)
@@ -53,8 +53,22 @@ class Discriminator(Model):
             # 4. Apply gradients
             gradient = tape.gradient(d_loss, self.variables)
             self.optimizer.apply_gradients(zip(gradient, self.variables))
+        # 6. Adjust augmentation probs.
+        rt = tf.reduce_mean(tf.sign(y_real)).numpy()
+        if self.n_step_tracker % 4 == 0:
+            image_augmenter.adapt_augmentation_probability(rt)
+            self.n_step_tracker = 1
+        else:
+            self.n_step_tracker += 1
         # 5. Compile losses in dictionary.
-        return {"d_loss_real": d_loss_real.numpy(), "d_loss_fake": d_loss_fake.numpy(), "gp_loss": gp_loss.numpy()}
+        d_loss_dict = {
+            "d_loss_real": d_loss_real.numpy(),
+            "d_loss_fake": d_loss_fake.numpy(),
+            "gp_loss": gp_loss.numpy(),
+            "rt": rt,
+            "p_augment": image_augmenter.p_augment
+        }
+        return d_loss_dict
 
     def _gradient_penalty(self, x_real, x_fake, batch_size):
         alpha = tf.random.uniform([batch_size, 1, 1, 1], 0.0, 1.0)

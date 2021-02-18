@@ -5,15 +5,16 @@ from networks.utils import update_smoothed_weights
 from networks.utils import generate_latent_vectors
 from networks.utils import clone_subclassed_model
 from training.training_monitor import TrainingMonitor
+from processing.image_augmenter import ImageAugmenter
 
 
 class NetworkTrainer:
-    """ Trains a set of progressively growing GANs. """
 
     def __init__(self, image_processor, **training_config):
         self.stage = 0
         self.image_processor = image_processor
         self.training_monitor = TrainingMonitor(self.image_processor, training_config["monitor_fid"] == "True")
+        self.image_augmenter = ImageAugmenter()
         self.n_batches = training_config['n_batches']
         self.n_images = training_config['n_images']
         self.start_time = time.time()
@@ -60,10 +61,10 @@ class NetworkTrainer:
             if fade_in:
                 update_fade_in([generator, discriminator], k, n_steps)
             # 3.3 Train discriminator.
-            d_loss = discriminator.train_on_batch(self.image_processor, generator, n_batch, shape)
+            d_loss = discriminator.train_on_batch(self.image_processor, generator, n_batch, shape, self.image_augmenter)
             # 3.4 Train generator.
             z_latent = generate_latent_vectors(latent_dim, n_batch)
-            g_loss = generator.train_on_batch(z_latent, discriminator, n_batch)
+            g_loss = generator.train_on_batch(z_latent, discriminator, n_batch, self.image_augmenter)
             # 3.5 Update "smoothed" generator weights.
             update_smoothed_weights(smoothed_generator, generator)
             # 3.6 Compute auxiliary loss statistics.

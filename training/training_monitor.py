@@ -73,7 +73,7 @@ class TrainingMonitor:
             generator=generator,
             n_samples=n_fake,
             shape=(res, res),
-            transform_type="min_max_to_zero_one"
+            transform_type="new_to_zero_one"
         )
         x_fake = [x_fake[k] for k in range(len(x_fake))]
         # 3. Generate and scale real images.

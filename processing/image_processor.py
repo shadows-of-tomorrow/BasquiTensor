@@ -34,6 +34,9 @@ class ImageProcessor:
             min_value = numpy_array.min()
             max_value = numpy_array.max()
             return self.shift_numpy_array(numpy_array, min_value, max_value-min_value)
+        elif transform_type == "new_to_zero_one":
+            a, b = self.compute_shift_coefficients(self.new_range, [0, 1])
+            return self.shift_numpy_array(numpy_array, a, b)
 
     @staticmethod
     def resize_numpy_array(numpy_array, shape):  # (n_samples, width, height, n_channels)
@@ -63,7 +66,7 @@ class ImageProcessor:
 
     @staticmethod
     @jit(nopython=True)
-    def reverse_shift_numpy_array(numpy_array, a, b):
+    def inverse_shift_numpy_array(numpy_array, a, b):
         return numpy_array * b + a
 
     @staticmethod

@@ -7,7 +7,7 @@ from tensorflow.keras.applications.inception_v3 import InceptionV3
 
 class FIDCalculator:
 
-    def __init__(self, image_processor, fid_res=256, n_fake_samples=256, n_real_samples=10000):
+    def __init__(self, image_processor, fid_res=128, n_fake_samples=128, n_real_samples=10000):
         print(f"Constructing Frechet Inception Distance calculator...")
         self.image_processor = image_processor
         self.n_fake_samples = n_fake_samples
@@ -24,7 +24,7 @@ class FIDCalculator:
             generator=generator,
             n_samples=self.n_fake_samples,
             shape=self.img_shape,
-            transform_type="min_max_to_zero_one"
+            transform_type="new_to_zero_one"
         )
         # 2. Compute activations on fake images.
         a_fake = np.transpose(self.inception_network.predict(x_fake))
