@@ -19,13 +19,7 @@ class FIDCalculator:
 
     def compute_fast_fid(self, generator):
         # 1. Generate fake images.
-        x_fake = generate_fake_samples(
-            image_processor=self.image_processor,
-            generator=generator,
-            n_samples=self.n_fake_samples,
-            shape=self.img_shape,
-            transform_type="new_to_zero_one"
-        )
+        x_fake = generate_fake_samples(self.image_processor, generator, self.n_fake_samples, self.img_shape, transform_type="new_to_zero_one")
         # 2. Compute activations on fake images.
         a_fake = np.transpose(self.inception_network.predict(x_fake))
         mu_fake = a_fake.mean(axis=1).reshape(-1, 1)
@@ -60,12 +54,7 @@ class FIDCalculator:
         return mu_diff + np.trace(cov_real + cov_fake - 2.0 * cov_diff)
 
     def _precompute_values(self):
-        x_real = generate_real_samples(
-            image_processor=self.image_processor,
-            n_samples=self.n_real_samples,
-            shape=self.img_shape,
-            transform_type="old_to_zero_one"
-        )
+        x_real = generate_real_samples(self.image_processor, self.n_real_samples, self.img_shape, transform_type="old_to_zero_one")
         a_real = self.inception_network.predict(x_real)
         mu_real, cov_real = a_real.mean(axis=0).reshape(-1, 1), np.cov(a_real, rowvar=False)
         trc_cov_real = np.trace(cov_real)
@@ -80,3 +69,4 @@ class FIDCalculator:
     @staticmethod
     def _compute_c_matrix(a, mu, n_examples):
         return (1.0 / np.sqrt(n_examples-1)) * (a - np.matmul(mu, np.ones((1, n_examples))))
+

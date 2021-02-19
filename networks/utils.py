@@ -1,7 +1,8 @@
 import numpy as np
-from networks.layers import WeightedSum
+import tensorflow as tf
 from tensorflow.keras import backend
 from tensorflow.keras.models import clone_model
+from networks.layers import WeightedSum
 
 
 def update_fade_in(models, step, n_steps):
@@ -49,3 +50,10 @@ def generate_real_samples(image_processor, n_samples, shape, dtype='float32', tr
     if x_real.shape[1] != shape[0]:
         x_real = image_processor.resize_numpy_array(x_real, shape)
     return x_real.astype(dtype)
+
+
+def tensor_dict_to_numpy(tensor_dict):
+    for key, value in tensor_dict.items():
+        if isinstance(value, tf.Tensor):
+            tensor_dict[key] = value.numpy()
+    return tensor_dict

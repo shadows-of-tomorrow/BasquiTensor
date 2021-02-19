@@ -69,7 +69,7 @@ class GeneratorConstructorStyle:
     def _add_next_block(self, x, w_latent, stage):
         n_filters = self._compute_filters_at_stage(stage)
         # 1. Double resolution operation.
-        x = UpSampling2D()(x)
+        x = UpSampling2D(interpolation='bilinear')(x)
         # 2. First conv (3x3) layer + noise.
         x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
         x = NoiseModulation()(x)

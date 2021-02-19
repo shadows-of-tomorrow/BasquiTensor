@@ -13,7 +13,8 @@ class ImageAugmenter:
         # Augmentation parameters.
         self.p_augment = init_p_augment
         self.n_adjust_imgs = 500000
-        self.p_augment_target = 0.60
+        self.p_augment_target = 0.50
+        self.p_augment_threshold = 0.01
         # Geometric transformation probabilities.
         self.p_flip = 1.00
         self.p_90d_rotation = 1.00
@@ -41,20 +42,18 @@ class ImageAugmenter:
         self.saturation_std = 1.0
 
     def run(self, x, is_tensor=True):
-        if self.p_augment > 1e-6:
-            if not is_tensor:
-                x = tf.convert_to_tensor(value=x, dtype='float32')
+        if not is_tensor:
+            x = tf.convert_to_tensor(value=x, dtype='float32')
+        if self.p_augment > self.p_augment_threshold:
             batch_size, width, height, channels = x.shape.as_list()
             g = self._construct_geometric_transforms(batch_size, width, height)
             x = self._apply_geometric_transforms(g, x, width, height, channels)
             c = self._construct_color_transforms(batch_size, width, height)
             x = self._apply_color_transforms(c, x, batch_size, width, height, channels)
-            if not is_tensor:
-                x = np.asarray(x)
         return x
 
     # ---------------------------------------- Augmentation Probability ------------------------------------------------
-    def adapt_augmentation_probability(self, rt, n_shown_images=168):
+    def adapt_augmentation_probability(self, rt, n_shown_images):
         p_augment = self.p_augment + (n_shown_images/self.n_adjust_imgs) * np.sign(rt - self.p_augment_target)
         self.p_augment = np.clip(p_augment, 0.0, 1.0)
 

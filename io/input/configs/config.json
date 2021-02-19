@@ -3,10 +3,10 @@
   {
     "model": "StyleGAN",
     "output_res": 128,
-    "latent_size": 128,
-    "n_base_filters": 1024,
+    "latent_size": 256,
+    "n_base_filters": 2048,
     "n_max_filters": 512,
-    "n_dense_layers": 4,
+    "n_dense_layers": 8,
     "adam_params": {
       "lr": 0.0001,
       "beta_1": 0.00,

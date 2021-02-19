@@ -75,7 +75,7 @@ class TrainingMonitor:
             shape=(res, res),
             transform_type="new_to_zero_one"
         )
-        x_fake = [x_fake[k] for k in range(len(x_fake))]
+        x_fake = [np.clip(x_fake[k], 0.0, 1.0) for k in range(len(x_fake))]
         # 3. Generate and scale real images.
         n_real = int(np.floor(self.n_plot_samples / 2))
         x_real = generate_real_samples(

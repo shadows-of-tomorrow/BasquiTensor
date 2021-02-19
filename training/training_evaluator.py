@@ -5,17 +5,18 @@ import matplotlib.pyplot as plt
 class TrainingEvaluator:
 
     def __init__(self, image_processor=None):
-        self.loss_burn_in = -500
+        self.loss_burn_in = 1
         self.fid_burn_in = 0
         self.image_processor = image_processor
+        self.d_loss_total = 'd_loss_total'
         self.d_loss_real = 'd_loss_real'
         self.d_loss_fake = 'd_loss_fake'
-        self.g_loss = 'g_loss'
-        self.gp_loss = 'gp_loss'
+        self.g_loss_total = 'g_loss_total'
+        self.d_gp_loss = 'd_gp_loss'
         self.fid = 'FID'
         self.time = 'time'
         self.memory = 'memory'
-        self.rt = 'rt'
+        self.ada_target = 'd_ada_target'
         self.p_augment = 'p_augment'
 
     def plot_loss(self, loss_dir):
@@ -33,39 +34,35 @@ class TrainingEvaluator:
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 2)
-        g_loss = self._scale_losses(loss_dict[self.g_loss][self.loss_burn_in:])
+        g_loss = self._scale_losses(loss_dict[self.g_loss_total][self.loss_burn_in:])
         plt.title("Generator Loss")
         plt.plot(g_loss, label='generator loss', color='red', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 3)
-        gp_loss = self._scale_losses(loss_dict[self.gp_loss][self.loss_burn_in:])
+        gp_loss = self._scale_losses(loss_dict[self.d_gp_loss][self.loss_burn_in:])
         plt.title("Gradient Penalty")
         plt.plot(gp_loss, label='gradient penalty', color='purple', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 4)
-        plt.title("Batch Processing Time (s)")
+        plt.title("Batch Processing Time")
         time_loss = loss_dict[self.time][self.loss_burn_in:]
         plt.plot(time_loss, color='black', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 5)
-        plt.title("Augmentation Monitor")
-        rt = loss_dict[self.rt][self.loss_burn_in:]
+        plt.title("Adaptive Image Augmentation")
+        rt = loss_dict[self.ada_target][self.loss_burn_in:]
         p_augment = loss_dict[self.p_augment][self.loss_burn_in:]
         plt.plot(rt, color='blue', label='rt', linewidth=0.50)
         plt.plot(p_augment, color='orange', label='p_augment', linewidth=0.75)
-        plt.ylim((0.00, 1.00))
-        plt.legend()
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 6)
         fid_loss = fid_dict[self.fid][self.fid_burn_in:]
         plt.title("Fast FID")
         plt.plot(fid_loss, label='Frechet Inception Distance', color='black', linewidth=0.25)
-        plt.yticks([0, 50, 100, 200])
-        plt.ylim((0, 200))
         plt.grid()
         plt.tight_layout()
         plt.show()
