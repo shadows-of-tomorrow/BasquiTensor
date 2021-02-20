@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 class TrainingEvaluator:
 
     def __init__(self, image_processor=None):
-        self.loss_burn_in = 1
+        self.loss_burn_in = 10
         self.fid_burn_in = 0
         self.image_processor = image_processor
         self.d_loss_total = 'd_loss_total'
@@ -26,11 +26,11 @@ class TrainingEvaluator:
         plt.subplot(2, 3, 1)
         d_loss_real = self._scale_losses(loss_dict[self.d_loss_real][self.loss_burn_in:])
         d_loss_fake = self._scale_losses(loss_dict[self.d_loss_fake][self.loss_burn_in:])
-        d_loss = self._scale_losses(self._add_d_losses(loss_dict)[self.loss_burn_in:])
+        d_loss_total = self._scale_losses(loss_dict[self.d_loss_total][self.loss_burn_in:])
         plt.title("Discriminator Loss")
         plt.plot(d_loss_real, label='discriminator loss (real)', color='orange', linewidth=0.25)
         plt.plot(d_loss_fake, label='discriminator loss (fake)', color='blue', linewidth=0.25)
-        plt.plot(d_loss, label='discriminator loss (total)', color='black', linewidth=0.25)
+        plt.plot(d_loss_total, label='discriminator loss (total)', color='black', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 2)
@@ -102,7 +102,7 @@ class TrainingEvaluator:
         return {k: [dic[k] for dic in lod] for k in lod[0]}
 
     @staticmethod
-    def _scale_losses(losses, scale_method="e"):
+    def _scale_losses(losses, scale_method="none"):
         if scale_method == "square_root":
             return [np.sqrt(x) if x > 0 else -np.sqrt(-x) for x in losses]
         else:
@@ -115,5 +115,5 @@ class TrainingEvaluator:
         return losses
 
 
-dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\bob_ross_128x128"
+dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\bob_ross_64x64"
 TrainingEvaluator().plot_loss(dir_loss)

@@ -1,14 +1,13 @@
 import numpy as np
-import tensorflow as tf
 from tensorflow.keras import backend
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.initializers import HeNormal
 from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import UpSampling2D
 from networks.layers import Constant
+from networks.layers import DenseEQL
+from networks.layers import Conv2DEQL
 from networks.layers import NoiseModulation
 from networks.layers import AdaptiveInstanceModulation
 from networks.style_gan.generator import Generator
@@ -41,7 +40,7 @@ class GeneratorConstructorStyle:
         # 4. Construct and add next blocks.
         for stage in range(2, self.n_blocks + 1):
             x = self._add_next_block(x, w_latent, stage)
-            y = UpSampling2D()(y)
+            y = UpSampling2D(interpolation='bilinear')(y)
             y = self._add_to_rgb(x, y)
         # 5. Construct and compile generator.
         generator = Generator(z_latent, y)
@@ -55,14 +54,14 @@ class GeneratorConstructorStyle:
         x = NoiseModulation()(x)
         x = LeakyReLU(0.20)(x)
         # 2. First AdaIN block.
-        y = Dense(units=2 * n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 0, :])
+        y = DenseEQL(units=2 * n_filters)(w_latent[:, 0, :])
         x = AdaptiveInstanceModulation()([x, y])
         # 3. Conv (3x3) layer + noise.
-        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = Conv2DEQL(out_channels=n_filters, kernel=3)(x)
         x = NoiseModulation()(x)
         x = LeakyReLU(0.20)(x)
         # 4. Second AdaIN block.
-        y = Dense(units=2 * n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 1, :])
+        y = DenseEQL(units=2 * n_filters)(w_latent[:, 1, :])
         x = AdaptiveInstanceModulation()([x, y])
         return x
 
@@ -71,18 +70,18 @@ class GeneratorConstructorStyle:
         # 1. Double resolution operation.
         x = UpSampling2D(interpolation='bilinear')(x)
         # 2. First conv (3x3) layer + noise.
-        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = Conv2DEQL(out_channels=n_filters, kernel=3)(x)
         x = NoiseModulation()(x)
         x = LeakyReLU(0.20)(x)
         # 3. First AdaIN block.
-        y = Dense(units=2 * n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 2 * (stage - 1), :])
+        y = DenseEQL(units=2 * n_filters)(w_latent[:, 2 * (stage - 1), :])
         x = AdaptiveInstanceModulation()([x, y])
         # 4. Second conv (3x3) layer + noise.
-        x = Conv2D(filters=n_filters, kernel_size=(3, 3), padding='same', kernel_initializer=self.kernel_init)(x)
+        x = Conv2DEQL(out_channels=n_filters, kernel=3)(x)
         x = NoiseModulation()(x)
         x = LeakyReLU(0.20)(x)
         # 5. Second AdaIN block.
-        y = Dense(units=2 * n_filters, kernel_initializer=self.kernel_init)(w_latent[:, 2 * (stage - 1) + 1, :])
+        y = DenseEQL(units=2 * n_filters)(w_latent[:, 2 * (stage - 1) + 1, :])
         x = AdaptiveInstanceModulation()([x, y])
         return x
 
@@ -94,7 +93,7 @@ class GeneratorConstructorStyle:
         model.compile(optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon))
 
     def _add_to_rgb(self, x, y):
-        x = Conv2D(filters=3, kernel_size=(1, 1), kernel_initializer=self.kernel_init)(x)
+        x = Conv2DEQL(out_channels=3, kernel=1)(x)
         if y is not None:
             x += y
         return x
@@ -107,9 +106,7 @@ class GeneratorConstructorStyle:
 
     def _add_mapping_layers(self, x):
         for k in range(self.n_dense_layers):
-            x = Dense(units=self.latent_size,
-                      kernel_initializer=self.kernel_init,
-                      name="mn_fc_%s" % str(k + 1))(x)
+            x = DenseEQL(units=self.latent_size, lrmul=0.01)(x)
             x = LeakyReLU(0.20)(x)
         return x
 

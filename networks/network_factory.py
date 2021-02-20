@@ -10,10 +10,10 @@ class NetworkFactory:
         self.network_config = network_config
 
     def run(self):
-        discriminators, generators = self._construct_gan_networks()
+        discriminators, generators = self._construct_networks()
         return {'discriminators': discriminators, 'generators': generators}
 
-    def _construct_gan_networks(self):
+    def _construct_networks(self):
         model_type = self.network_config['model']
         if model_type == "ProGAN":
             return self._construct_progressive_gan_networks()

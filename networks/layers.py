@@ -1,37 +1,89 @@
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend
 from tensorflow.keras.layers import Add
 from tensorflow.keras.layers import Layer
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.initializers import RandomNormal
 
 
-class DenseEQL(Dense):
+class DenseEQL(Layer):
 
-    def __init__(self, gain=np.sqrt(2), **kwargs):
-        super().__init__(kernel_initializer=RandomNormal(mean=0., stddev=1.), **kwargs)
+    def __init__(self, units, gain=2, lrmul=1, **kwargs):
+        super(DenseEQL, self).__init__(kwargs)
+        self.units = units
         self.gain = gain
+        self.lrmul = lrmul
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({'units': self.units})
+        config.update({'gain': self.gain})
+        config.update({'lrmul': self.lrmul})
+        return config
 
     def build(self, input_shape):
-        super().build(input_shape)
-        fan_in = np.prod(input_shape[1:])
-        he_const = self.gain / np.sqrt(fan_in)
-        self.kernel = self.kernel * he_const
+        self.in_channels = input_shape[-1]
+        self.w = self.add_weight(
+            shape=[self.in_channels, self.units],
+            initializer=RandomNormal(mean=0.0, stddev=1.0 / self.lrmul),
+            trainable=True,
+            name='kernel'
+        )
+        self.b = self.add_weight(
+            shape=(self.units,),
+            initializer='zeros',
+            trainable=True,
+            name='bias'
+        )
+        fan_in = self.in_channels
+        self.scale = tf.sqrt(self.gain/fan_in)
 
+    @tf.function
+    def call(self, inputs):
+        output = tf.matmul(inputs, self.scale * self.w) + self.b
+        return output * self.lrmul
 
-class Conv2DEQL(Conv2D):
+class Conv2DEQL(Layer):
 
-    def __init__(self, gain=np.sqrt(2), **kwargs):
-        super().__init__(kernel_initializer=RandomNormal(mean=0., stddev=1.), **kwargs)
+    def __init__(self, out_channels, kernel=3, gain=2, **kwargs):
+        super(Conv2DEQL, self).__init__(kwargs)
+        self.kernel = kernel
+        self.out_channels = out_channels
         self.gain = gain
+        self.pad = self.kernel != 1
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({'kernel': self.kernel})
+        config.update({'out_channels': self.out_channels})
+        config.update({'gain': self.gain})
+        config.update({'pad': self.pad})
+        return config
 
     def build(self, input_shape):
-        super().build(input_shape)
-        fan_in = np.prod(input_shape[1:])
-        he_const = self.gain / np.sqrt(fan_in)
-        self.kernel = self.kernel * he_const
+        self.in_channels = input_shape[-1]
+        initializer = RandomNormal(mean=0.0, stddev=1.0)
+        self.w = self.add_weight(
+            shape=[self.kernel, self.kernel, self.in_channels, self.out_channels],
+            initializer=initializer,
+            trainable=True,
+            name='kernel'
+        )
+        self.b = self.add_weight(
+            shape=(self.out_channels,),
+            initializer='zeros',
+            trainable=True,
+            name='bias'
+        )
+        fan_in = self.kernel * self.kernel * self.in_channels
+        self.scale = tf.sqrt(self.gain/fan_in)
+
+    def call(self, inputs):
+        if self.pad:
+            x = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='REFLECT')
+        else:
+            x = inputs
+        output = tf.nn.conv2d(x, self.scale * self.w, strides=1, padding="VALID") + self.b
+        return output
 
 
 class AdaptiveInstanceModulation(Layer):

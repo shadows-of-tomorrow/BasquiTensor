@@ -9,12 +9,13 @@ WAVELET = [0.015404109327027373, 0.0034907120842174702, -0.11799011114819057, -0
 
 class ImageAugmenter:
 
-    def __init__(self, init_p_augment=0.00):
-        # Augmentation parameters.
-        self.p_augment = init_p_augment
-        self.n_adjust_imgs = 500000
+    def __init__(self):
+        # Global augmentation parameters.
+        self.p_augment = 0.00
         self.p_augment_target = 0.50
         self.p_augment_threshold = 0.01
+        self.p_augment_max = 0.80
+        self.n_adjust_imgs = 500000
         # Geometric transformation probabilities.
         self.p_flip = 1.00
         self.p_90d_rotation = 1.00
@@ -55,7 +56,7 @@ class ImageAugmenter:
     # ---------------------------------------- Augmentation Probability ------------------------------------------------
     def adapt_augmentation_probability(self, rt, n_shown_images):
         p_augment = self.p_augment + (n_shown_images/self.n_adjust_imgs) * np.sign(rt - self.p_augment_target)
-        self.p_augment = np.clip(p_augment, 0.0, 1.0)
+        self.p_augment = np.clip(p_augment, 0.0, self.p_augment_max)
 
     # ---------------------------------------- Geometric Transforms ----------------------------------------------------
     def _apply_geometric_transforms(self, g_inv, x, width, height, channels):
@@ -259,15 +260,16 @@ class ImageAugmenter:
         return c_sat_scale @ c
 
     # ---------------------------------------- Matrix Construction -----------------------------------------------------
-
-    def _apply_probability_mask(self, probability, parameters, mask_value):
+    @staticmethod
+    def _apply_probability_mask(probability, parameters, mask_value):
         shape = tf.shape(parameters)
         mask = tf.random.uniform(shape, 0, 1) < probability
         mask_value = tf.broadcast_to(tf.convert_to_tensor(mask_value, dtype=parameters.dtype), shape)
         masked_parameters = tf.where(mask, parameters, mask_value)
         return masked_parameters
 
-    def _convert_rows_to_matrix(self, *rows):
+    @staticmethod
+    def _convert_rows_to_matrix(*rows):
         rows = [[tf.convert_to_tensor(x, dtype=tf.float32) for x in r] for r in rows]
         batch_elems = [x for r in rows for x in r if x.shape.rank != 0]
         assert all(x.shape.rank == 1 for x in batch_elems)
