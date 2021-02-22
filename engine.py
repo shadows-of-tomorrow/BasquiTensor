@@ -10,11 +10,11 @@ from processing.image_processor import ImageProcessor
 from processing.config_processor import ConfigProcessor
 
 
-class Engine:
+class TrainingEngine:
 
     def __init__(self, run_id):
         self.run_id = run_id
-        self.parent_dir = os.path.dirname(__file__)
+        self.parent_dir = os.path.dirname(os.path.dirname(__file__))
         self.config_dir = os.path.join(self.parent_dir, 'io', 'input', 'configs')
 
     def run(self):
@@ -57,5 +57,5 @@ class Engine:
 
 if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
-    engine = Engine(run_id=timestamp)
+    engine = TrainingEngine(run_id=timestamp)
     engine.run()

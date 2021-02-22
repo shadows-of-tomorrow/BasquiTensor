@@ -42,7 +42,7 @@ class ImageProcessor:
     def resize_numpy_array(numpy_array, shape):  # (n_samples, width, height, n_channels)
         resized_arrays = []
         for k in range(numpy_array.shape[0]):
-            temp_array = cv2.resize(src=numpy_array[k], dsize=shape, interpolation=cv2.INTER_NEAREST)
+            temp_array = cv2.resize(src=numpy_array[k], dsize=shape, interpolation=cv2.INTER_LINEAR)
             resized_arrays.append(temp_array)
         return np.stack(resized_arrays, axis=0)
 

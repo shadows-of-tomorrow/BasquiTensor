@@ -2,11 +2,11 @@
   "network_parameters":
   {
     "model": "StyleGAN",
-    "output_res": 64,
+    "output_res": 128,
     "latent_size": 512,
     "n_base_filters": 1024,
     "n_max_filters": 512,
-    "n_dense_layers": 8,
+    "n_dense_layers": 2,
     "adam_params": {
       "lr": 0.0020,
       "beta_1": 0.00,
@@ -23,6 +23,6 @@
   "directories":
   {
     "input": "io/input/images/bob_ross",
-    "output": "io/output/bob_ross_64x64"
+    "output": "io/output/training/bob_ross_128x128"
   }
 }

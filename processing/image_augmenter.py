@@ -12,7 +12,7 @@ class ImageAugmenter:
     def __init__(self):
         # Global augmentation parameters.
         self.p_augment = 0.00
-        self.p_augment_target = 0.50
+        self.p_augment_target = 0.60
         self.p_augment_threshold = 0.01
         self.p_augment_max = 0.80
         self.n_adjust_imgs = 500000

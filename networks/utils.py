@@ -43,6 +43,15 @@ def generate_fake_samples(image_processor, generator, n_samples, shape, dtype='f
     return x_fake
 
 
+def generate_fake_samples_from_latents(z_latent, image_processor, generator, shape, transform_type=None):
+    x_fake = generator(z_latent, training=False).numpy()
+    if transform_type is not None:
+        x_fake = image_processor.transform_numpy_array(x_fake, transform_type)
+    if x_fake.shape[1] != shape[0]:
+        x_fake = image_processor.resize_numpy_array(x_fake, shape)
+    return x_fake
+
+
 def generate_real_samples(image_processor, n_samples, shape, dtype='float32', transform_type="old_to_new"):
     x_real = image_processor.sample_numpy_array(n_samples)
     if transform_type is not None:

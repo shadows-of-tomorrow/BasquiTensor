@@ -1,13 +1,13 @@
-import numpy as np
+import os
 import matplotlib.pyplot as plt
 
 
 class TrainingEvaluator:
 
-    def __init__(self, image_processor=None):
+    def __init__(self, dir_train):
+        self.dir_train = dir_train
         self.loss_burn_in = 10
         self.fid_burn_in = 0
-        self.image_processor = image_processor
         self.d_loss_total = 'd_loss_total'
         self.d_loss_real = 'd_loss_real'
         self.d_loss_fake = 'd_loss_fake'
@@ -19,14 +19,14 @@ class TrainingEvaluator:
         self.ada_target = 'd_ada_target'
         self.p_augment = 'p_augment'
 
-    def plot_loss(self, loss_dir):
-        loss_dict = self._read_txt_file(loss_dir, 'loss.txt')
-        fid_dict = self._read_txt_file(loss_dir, 'fid.txt')
+    def plot_training_progress(self):
+        loss_dict = self._read_txt_file(self.dir_train, 'loss.txt')
+        fid_dict = self._read_txt_file(self.dir_train, 'fid.txt')
         plt.suptitle("Training Evaluation")
         plt.subplot(2, 3, 1)
-        d_loss_real = self._scale_losses(loss_dict[self.d_loss_real][self.loss_burn_in:])
-        d_loss_fake = self._scale_losses(loss_dict[self.d_loss_fake][self.loss_burn_in:])
-        d_loss_total = self._scale_losses(loss_dict[self.d_loss_total][self.loss_burn_in:])
+        d_loss_real = loss_dict[self.d_loss_real][self.loss_burn_in:]
+        d_loss_fake = loss_dict[self.d_loss_fake][self.loss_burn_in:]
+        d_loss_total = loss_dict[self.d_loss_total][self.loss_burn_in:]
         plt.title("Discriminator Loss")
         plt.plot(d_loss_real, label='discriminator loss (real)', color='orange', linewidth=0.25)
         plt.plot(d_loss_fake, label='discriminator loss (fake)', color='blue', linewidth=0.25)
@@ -34,13 +34,13 @@ class TrainingEvaluator:
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 2)
-        g_loss = self._scale_losses(loss_dict[self.g_loss_total][self.loss_burn_in:])
+        g_loss = loss_dict[self.g_loss_total][self.loss_burn_in:]
         plt.title("Generator Loss")
         plt.plot(g_loss, label='generator loss', color='red', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
         plt.subplot(2, 3, 3)
-        gp_loss = self._scale_losses(loss_dict[self.d_gp_loss][self.loss_burn_in:])
+        gp_loss = loss_dict[self.d_gp_loss][self.loss_burn_in:]
         plt.title("Gradient Penalty")
         plt.plot(gp_loss, label='gradient penalty', color='purple', linewidth=0.25)
         plt.grid()
@@ -85,11 +85,6 @@ class TrainingEvaluator:
             line[key] = value
         return line
 
-    def _add_d_losses(self, loss_dict):
-        return [loss_dict[self.d_loss_real][k]
-                + loss_dict[self.d_loss_fake][k]
-                for k in range(len(loss_dict[self.d_loss_fake]))]
-
     @staticmethod
     def _str_to_float(string):
         try:
@@ -101,19 +96,9 @@ class TrainingEvaluator:
     def _lod_to_dol(lod):
         return {k: [dic[k] for dic in lod] for k in lod[0]}
 
-    @staticmethod
-    def _scale_losses(losses, scale_method="none"):
-        if scale_method == "square_root":
-            return [np.sqrt(x) if x > 0 else -np.sqrt(-x) for x in losses]
-        else:
-            return losses
 
-    @staticmethod
-    def _apply_ewma(losses, alpha=0.99):
-        for k in range(1, len(losses)):
-            losses[k] = alpha * losses[k-1] + (1.0-alpha) * losses[k]
-        return losses
-
-
-dir_loss = f"C:\\Users\\robin\\Desktop\\Projects\\painter\\io\\output\\bob_ross_64x64"
-TrainingEvaluator().plot_loss(dir_loss)
+if __name__ == "__main__":
+    name = "bob_ross_128x128"
+    dir_train = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', name)
+    evaluator = TrainingEvaluator(dir_train)
+    evaluator.plot_training_progress()
