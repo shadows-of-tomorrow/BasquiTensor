@@ -5,14 +5,13 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import AveragePooling2D
-from tensorflow.keras.initializers import HeNormal
-from networks.style_gan.discriminator import Discriminator
-from networks.layers import MinibatchStDev
-from networks.layers import DenseEQL
-from networks.layers import Conv2DEQL
+from gans.stylegan.stylegan_discriminator import StyleGANDiscriminator
+from gans.layers import MinibatchStDev
+from gans.layers import DenseEQL
+from gans.layers import Conv2DEQL
 
 
-class DiscriminatorConstructorStyle:
+class StyleGANDiscriminatorConstructor:
 
     def __init__(self, **network_config):
         # Resolution related fields.
@@ -25,7 +24,7 @@ class DiscriminatorConstructorStyle:
         # Other fields.
         self.adam_params = network_config['adam_params']
         self.loss_type = network_config['loss_type']
-        self.kernel_init = HeNormal()
+        self.relu_slope = 0.20
 
     def run(self):
         # 1. Construct initial block.
@@ -37,7 +36,7 @@ class DiscriminatorConstructorStyle:
         # 3. Add terminal block.
         output_layer = self._add_terminal_block(x)
         # 4. Construct and compile discriminator.
-        discriminator = Discriminator(input_layer, output_layer)
+        discriminator = StyleGANDiscriminator(input_layer, output_layer)
         discriminator.loss_type = self.loss_type
         self._compile_model(discriminator)
         return [[discriminator, discriminator]]
@@ -91,13 +90,15 @@ class DiscriminatorConstructorStyle:
         epsilon = self.adam_params["epsilon"]
         model.compile(optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon))
 
+    # ------------------------------------------- Utils ----------------------------------------------------------------
+
     def _construct_input_layer(self):
         return Input(shape=(self.output_res, self.output_res, 3))
 
     def _add_convolutional_layers(self, x, n_filters, kernel_size, n_layers):
         for _ in range(n_layers):
-            x = Conv2DEQL(out_channels=n_filters, kernel=kernel_size)(x)
-            x = LeakyReLU(0.20)(x)
+            x = Conv2DEQL(n_channels=n_filters, kernel_size=kernel_size)(x)
+            x = LeakyReLU(self.relu_slope)(x)
         return x
 
     def _add_dense_layer(self, x, units, flatten, use_activation):
@@ -105,7 +106,7 @@ class DiscriminatorConstructorStyle:
             x = Flatten()(x)
         x = DenseEQL(units=units)(x)
         if use_activation:
-            x = LeakyReLU(0.20)(x)
+            x = LeakyReLU(self.relu_slope)(x)
         return x
 
     def _add_from_rgb_layer(self, x, n_filters):
@@ -118,7 +119,8 @@ class DiscriminatorConstructorStyle:
             x = self._add_from_rgb_layer(x, n_filters)
         return x
 
-    def _add_minibatch_std_layer(self, x):
+    @staticmethod
+    def _add_minibatch_std_layer(x):
         return MinibatchStDev()(x)
 
     def _compute_n_filters_at_stage(self, stage):

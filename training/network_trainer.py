@@ -1,9 +1,9 @@
 import time
 import psutil
-from networks.utils import update_fade_in
-from networks.utils import update_smoothed_weights
-from networks.utils import generate_latent_vectors
-from networks.utils import clone_subclassed_model
+from gans.utils import update_fade_in
+from gans.utils import update_smoothed_weights
+from gans.utils import generate_latent_vectors
+from gans.utils import clone_subclassed_model
 from training.training_monitor import TrainingMonitor
 from processing.image_augmenter import ImageAugmenter
 
@@ -20,7 +20,7 @@ class NetworkTrainer:
         self.start_time = time.time()
 
     def run(self, networks):
-        # 0. Unpack networks.
+        # 0. Unpack gans.
         discriminators = networks['discriminators']
         generators = networks['generators']
         assert len(discriminators) == len(generators)
@@ -30,7 +30,7 @@ class NetworkTrainer:
         generator = generators[0][0]
         # 2. Train initial models.
         res = generator.output.shape[1]
-        print(f"Training networks at {res}x{res} resolution...")
+        print(f"Training gans at {res}x{res} resolution...")
         self._train_epochs(generator, discriminator, self.n_images[0], self.n_batches[0], False)
         # 3. Train models at each growth stage.
         for k in range(1, len(discriminators)):
@@ -39,7 +39,7 @@ class NetworkTrainer:
             [gen_tuning, gen_fade_in] = generators[k]
             # 3.2 Train fade-in models.
             res = gen_tuning.output.shape[1]
-            print(f"Training networks at {res}x{res} resolution...")
+            print(f"Training gans at {res}x{res} resolution...")
             self._train_epochs(gen_fade_in, dis_fade_in, self.n_images[k], self.n_batches[k], True)
             # 3.3 Train tuning models.
             self._train_epochs(gen_tuning, dis_tuning, self.n_images[k], self.n_batches[k], False)

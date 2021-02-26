@@ -2,13 +2,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
-from networks.utils import generate_latent_vectors_ball
-from networks.utils import generate_fake_images_from_latents
-from networks.layers import Constant
-from networks.layers import DenseEQL
-from networks.layers import Conv2DEQL
-from networks.layers import NoiseModulation
-from networks.layers import AdaptiveInstanceModulation
+from gans.utils import generate_latent_vectors_ball
+from gans.utils import generate_fake_images_from_latents
+from gans.layers import Constant
+from gans.layers import DenseEQL
+from gans.layers import Conv2DEQL
+from gans.layers import NoiseModulation
+from gans.layers import AdaptiveInstanceModulation
 from processing.image_processor import ImageProcessor
 
 CUSTOM_LAYER_MAPPING = {

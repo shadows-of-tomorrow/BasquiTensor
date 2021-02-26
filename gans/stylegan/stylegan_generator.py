@@ -1,12 +1,12 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from networks.loss import generator_loss
+from gans.loss import generator_loss
 
 
-class Generator(Model):
+class StyleGANGenerator(Model):
 
     def __init__(self, *args, **kwargs):
-        super(Generator, self).__init__(*args, **kwargs)
+        super(StyleGANGenerator, self).__init__(*args, **kwargs)
         self.loss_type = None
         self.latent_dist = None
 

@@ -1,5 +1,5 @@
-from networks.style_gan.generator_constructor import GeneratorConstructorStyle
-from networks.style_gan.discriminator_constructor import DiscriminatorConstructorStyle
+from gans.stylegan.stylegan_generator_constructor import StyleGANGeneratorConstructor
+from gans.stylegan.stylegan_discriminator_constructor import StyleGANDiscriminatorConstructor
 
 
 class NetworkFactory:
@@ -19,6 +19,6 @@ class NetworkFactory:
             raise Exception(f"Model type: {model_type} is not recognized!")
 
     def _construct_style_gan_networks(self):
-        discriminators = DiscriminatorConstructorStyle(**self.network_config).run()
-        generators = GeneratorConstructorStyle(**self.network_config).run()
+        discriminators = StyleGANDiscriminatorConstructor(**self.network_config).run()
+        generators = StyleGANGeneratorConstructor(**self.network_config).run()
         return discriminators, generators

@@ -4,7 +4,7 @@ import tensorflow as tf
 def generator_loss(discriminator, generator, image_augmenter, z_latent, loss_type):
     # 1. Generate (augmented) fake images with trainable generator.
     x_fake = generator(z_latent, training=True)
-    x_fake = image_augmenter.run(x_fake, is_tensor=True)
+    x_fake = image_augmenter.transform_tensors(x_fake, is_tensor=True)
     # 2. Compute generator loss.
     if loss_type == "vanilla":
         return generator_vanilla_loss(discriminator, x_fake)
@@ -64,7 +64,7 @@ def discriminator_vanilla_loss(discriminator, x_real, x_fake):
     return loss_dict, y_real
 
 
-def discriminator_wasserstein_loss(discriminator, x_real, x_fake, batch_size):
+def discriminator_wasserstein_loss(discriminator, x_real, x_fake, batch_size, use_drift_penalty=False):
     # 1. Score real and fake images.
     y_real = discriminator(x_real, training=True)
     y_fake = discriminator(x_fake, training=True)
@@ -76,15 +76,15 @@ def discriminator_wasserstein_loss(discriminator, x_real, x_fake, batch_size):
     gp_loss = wasserstein_gradient_penalty(discriminator, x_real, x_fake, batch_size)
     loss_total += gp_loss
     # 4. Compute and add drift penalty loss.
-    # dp_loss = drift_penalty(y_real)
-    # loss_total += dp_loss
+    if use_drift_penalty:
+        dp_loss = drift_penalty(y_real)
+        loss_total += dp_loss
     # 5. Gather losses in dictionary.
     loss_dict = {
         'd_loss_total': loss_total,
         'd_loss_real': loss_real,
         'd_loss_fake': loss_fake,
-        'd_gp_loss': gp_loss,
-        'd_dp_loss': 0.0
+        'd_gp_loss': gp_loss
     }
     return loss_dict, y_real
 

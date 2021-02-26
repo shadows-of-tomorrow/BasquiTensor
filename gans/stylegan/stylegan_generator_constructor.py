@@ -1,19 +1,18 @@
 import numpy as np
 from tensorflow.keras import backend
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.initializers import HeNormal
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import UpSampling2D
-from networks.layers import Constant
-from networks.layers import DenseEQL
-from networks.layers import Conv2DEQL
-from networks.layers import NoiseModulation
-from networks.layers import AdaptiveInstanceModulation
-from networks.style_gan.generator import Generator
+from gans.layers import Constant
+from gans.layers import DenseEQL
+from gans.layers import Conv2DEQL
+from gans.layers import NoiseModulation
+from gans.layers import AdaptiveInstanceModulation
+from gans.stylegan.stylegan_generator import StyleGANGenerator
 
 
-class GeneratorConstructorStyle:
+class StyleGANGeneratorConstructor:
 
     def __init__(self, **network_config):
         # 1. Resolution related fields.
@@ -27,10 +26,9 @@ class GeneratorConstructorStyle:
         self.n_base_filters = network_config['n_base_filters']
         self.n_max_filters = network_config['n_max_filters']
         self.n_mapping_layers = network_config['style_gan_params']['n_mapping_layers']
-        # 3. Kernel initialization.
         self.adam_params = network_config['adam_params']
         self.loss_type = network_config['loss_type']
-        self.kernel_init = HeNormal()
+        self.relu_slope = 0.20
 
     def run(self):
         # 1. Construct mapping network.
@@ -45,25 +43,31 @@ class GeneratorConstructorStyle:
             y = UpSampling2D()(y)
             y = self._add_to_rgb(x, y)
         # 5. Construct and compile generator.
-        generator = Generator(z_latent, y)
+        generator = StyleGANGenerator(z_latent, y)
         generator.loss_type = self.loss_type
         generator.latent_dist = self.latent_dist
         self._compile_model(generator)
         return [[generator, generator]]
+
+    def _construct_mapping_network(self):
+        z_latent = Input(shape=(self.latent_size,), name="mn_latent")
+        x = self._add_mapping_layers(z_latent)
+        w_latent = self._broadcast_disentangled_latents(x)
+        return z_latent, w_latent
 
     def _construct_initial_block(self, w_latent):
         n_filters = self._compute_filters_at_stage(1)
         # 1. Constant layer + noise.
         x = Constant(shape=(1, 4, 4, n_filters), initializer='ones')(w_latent)
         x = NoiseModulation()(x)
-        x = LeakyReLU(0.20)(x)
+        x = LeakyReLU(self.relu_slope)(x)
         # 2. First AdaIN block.
         y = DenseEQL(units=2 * n_filters)(w_latent[:, 0, :])
         x = AdaptiveInstanceModulation()([x, y])
         # 3. Conv (3x3) layer + noise.
-        x = Conv2DEQL(out_channels=n_filters, kernel=3)(x)
+        x = Conv2DEQL(n_channels=n_filters, kernel_size=3)(x)
         x = NoiseModulation()(x)
-        x = LeakyReLU(0.20)(x)
+        x = LeakyReLU(self.relu_slope)(x)
         # 4. Second AdaIN block.
         y = DenseEQL(units=2 * n_filters)(w_latent[:, 1, :])
         x = AdaptiveInstanceModulation()([x, y])
@@ -74,16 +78,16 @@ class GeneratorConstructorStyle:
         # 1. Double resolution operation.
         x = UpSampling2D()(x)
         # 2. First conv (3x3) layer + noise.
-        x = Conv2DEQL(out_channels=n_filters, kernel=3)(x)
+        x = Conv2DEQL(n_channels=n_filters, kernel_size=3)(x)
         x = NoiseModulation()(x)
-        x = LeakyReLU(0.20)(x)
+        x = LeakyReLU(self.relu_slope)(x)
         # 3. First AdaIN block.
         y = DenseEQL(units=2 * n_filters)(w_latent[:, 2 * (stage - 1), :])
         x = AdaptiveInstanceModulation()([x, y])
         # 4. Second conv (3x3) layer + noise.
-        x = Conv2DEQL(out_channels=n_filters, kernel=3)(x)
+        x = Conv2DEQL(n_channels=n_filters, kernel_size=3)(x)
         x = NoiseModulation()(x)
-        x = LeakyReLU(0.20)(x)
+        x = LeakyReLU(self.relu_slope)(x)
         # 5. Second AdaIN block.
         y = DenseEQL(units=2 * n_filters)(w_latent[:, 2 * (stage - 1) + 1, :])
         x = AdaptiveInstanceModulation()([x, y])
@@ -96,17 +100,13 @@ class GeneratorConstructorStyle:
         epsilon = self.adam_params["epsilon"]
         model.compile(optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon))
 
-    def _add_to_rgb(self, x, y):
-        x = Conv2DEQL(out_channels=3, kernel=1)(x)
+    # ------------------------------------------- Utils ----------------------------------------------------------------
+    @staticmethod
+    def _add_to_rgb(x, y):
+        x = Conv2DEQL(n_channels=3, kernel_size=1)(x)
         if y is not None:
             x += y
         return x
-
-    def _construct_mapping_network(self):
-        z_latent = Input(shape=(self.latent_size,), name="mn_latent")
-        x = self._add_mapping_layers(z_latent)
-        w_latent = self._broadcast_disentangled_latents(x)
-        return z_latent, w_latent
 
     def _add_mapping_layers(self, x):
         for k in range(self.n_mapping_layers):

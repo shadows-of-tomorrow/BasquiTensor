@@ -24,6 +24,49 @@ class TrainingEvaluator:
     def plot_training_progress(self):
         loss_dict = self._read_txt_file(self.dir_train, 'loss.txt')
         fid_dict = self._read_txt_file(self.dir_train, 'fid.txt')
+        self._plot_network_losses(loss_dict)
+        self._plot_gradient_penalty(loss_dict)
+        self._plot_batch_processing_time(loss_dict)
+        self._plot_image_augmentation(loss_dict)
+        self._plot_ffid(fid_dict)
+        plt.show()
+
+    def _plot_ffid(self, fid_dict):
+        plt.subplot(2, 3, 6)
+        fid_loss = fid_dict[self.fid][self.fid_burn_in:]
+        plt.title("Fast FID")
+        plt.plot(fid_loss, label='Frechet Inception Distance', color='black', linewidth=0.25)
+        plt.grid()
+        plt.tight_layout()
+        plt.show()
+
+    def _plot_image_augmentation(self, loss_dict):
+        plt.subplot(2, 3, 5)
+        plt.title("Adaptive Image Augmentation")
+        rt = loss_dict[self.ada_target][self.loss_burn_in:]
+        p_augment = loss_dict[self.p_augment][self.loss_burn_in:]
+        plt.plot(rt, color='blue', label='rt', linewidth=0.50)
+        plt.plot(p_augment, color='orange', label='p_augment', linewidth=0.75)
+        plt.grid()
+        plt.tight_layout()
+
+    def _plot_batch_processing_time(self, loss_dict):
+        plt.subplot(2, 3, 4)
+        plt.title("Batch Processing Time")
+        time_loss = loss_dict[self.time][self.loss_burn_in:]
+        plt.plot(time_loss, color='black', linewidth=0.25)
+        plt.grid()
+        plt.tight_layout()
+
+    def _plot_gradient_penalty(self, loss_dict):
+        plt.subplot(2, 3, 3)
+        gp_loss = self._scale_losses(loss_dict[self.d_gp_loss][self.loss_burn_in:])
+        plt.title("Gradient Penalty")
+        plt.plot(gp_loss, label='gradient penalty', color='purple', linewidth=0.25)
+        plt.grid()
+        plt.tight_layout()
+
+    def _plot_network_losses(self, loss_dict):
         plt.suptitle("Training Evaluation")
         plt.subplot(2, 3, 1)
         d_loss_real = self._scale_losses(loss_dict[self.d_loss_real][self.loss_burn_in:], self.scale_type)
@@ -41,33 +84,6 @@ class TrainingEvaluator:
         plt.plot(d_loss_total, label='discriminator loss', color='black', linewidth=0.25)
         plt.grid()
         plt.tight_layout()
-        plt.subplot(2, 3, 3)
-        gp_loss = self._scale_losses(loss_dict[self.d_gp_loss][self.loss_burn_in:])
-        plt.title("Gradient Penalty")
-        plt.plot(gp_loss, label='gradient penalty', color='purple', linewidth=0.25)
-        plt.grid()
-        plt.tight_layout()
-        plt.subplot(2, 3, 4)
-        plt.title("Batch Processing Time")
-        time_loss = loss_dict[self.time][self.loss_burn_in:]
-        plt.plot(time_loss, color='black', linewidth=0.25)
-        plt.grid()
-        plt.tight_layout()
-        plt.subplot(2, 3, 5)
-        plt.title("Adaptive Image Augmentation")
-        rt = loss_dict[self.ada_target][self.loss_burn_in:]
-        p_augment = loss_dict[self.p_augment][self.loss_burn_in:]
-        plt.plot(rt, color='blue', label='rt', linewidth=0.50)
-        plt.plot(p_augment, color='orange', label='p_augment', linewidth=0.75)
-        plt.grid()
-        plt.tight_layout()
-        plt.subplot(2, 3, 6)
-        fid_loss = fid_dict[self.fid][self.fid_burn_in:]
-        plt.title("Fast FID")
-        plt.plot(fid_loss, label='Frechet Inception Distance', color='black', linewidth=0.25)
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
 
     def _scale_losses(self, losses, scale_type="square_root"):
         if scale_type == "square_root":

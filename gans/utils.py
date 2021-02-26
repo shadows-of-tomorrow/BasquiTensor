@@ -1,10 +1,10 @@
 import numpy as np
+from gans.layers import WeightedSum
 from tensorflow.keras import backend
 from tensorflow.keras.models import clone_model
-from networks.layers import WeightedSum
 
 
-# ----------------------------- Network Modifications ------------------------------------------------------------------
+# ----------------------------- Network Modification -------------------------------------------------------------------
 
 def update_fade_in(models, step, n_steps):
     alpha = step / float(n_steps - 1)

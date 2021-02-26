@@ -9,7 +9,8 @@
     "n_base_filters": 2048,
     "n_max_filters": 512,
     "adam_params": {"lr": 0.0020, "beta_1": 0.00, "beta_2": 0.99, "epsilon": 10e-8},
-    "style_gan_params": {"n_mapping_layers": 2, "use_growing": "false"}
+    "style_gan_params": {"n_mapping_layers": 2, "use_growing": "false"},
+    "super_res_gan_params": {"placeholder": 3}
   },
   "training_parameters":
   {
