@@ -22,13 +22,13 @@ class DenseEQL(Layer):
 
     def build(self, input_shape):
         self.in_channels = input_shape[-1]
-        self.w = self.add_weight(
+        self.kernel = self.add_weight(
             shape=[self.in_channels, self.units],
             initializer=RandomNormal(mean=0.0, stddev=1.0 / self.lrmul),
             trainable=True,
             name='kernel'
         )
-        self.b = self.add_weight(
+        self.bias = self.add_weight(
             shape=(self.units,),
             initializer='zeros',
             trainable=True,
@@ -39,50 +39,45 @@ class DenseEQL(Layer):
 
     @tf.function
     def call(self, inputs):
-        output = tf.matmul(inputs, self.scale * self.w) + self.b
+        output = tf.matmul(inputs, self.scale * self.kernel) + self.bias
         return output * self.lrmul
+
 
 class Conv2DEQL(Layer):
 
     def __init__(self, out_channels, kernel=3, gain=2, **kwargs):
         super(Conv2DEQL, self).__init__(kwargs)
-        self.kernel = kernel
+        self.kernel_size = kernel
         self.out_channels = out_channels
         self.gain = gain
-        self.pad = self.kernel != 1
 
     def get_config(self):
         config = super().get_config().copy()
-        config.update({'kernel': self.kernel})
+        config.update({'kernel_size': self.kernel_size})
         config.update({'out_channels': self.out_channels})
         config.update({'gain': self.gain})
-        config.update({'pad': self.pad})
         return config
 
     def build(self, input_shape):
         self.in_channels = input_shape[-1]
         initializer = RandomNormal(mean=0.0, stddev=1.0)
-        self.w = self.add_weight(
-            shape=[self.kernel, self.kernel, self.in_channels, self.out_channels],
+        self.kernel = self.add_weight(
+            shape=[self.kernel_size, self.kernel_size, self.in_channels, self.out_channels],
             initializer=initializer,
             trainable=True,
             name='kernel'
         )
-        self.b = self.add_weight(
+        self.bias = self.add_weight(
             shape=(self.out_channels,),
             initializer='zeros',
             trainable=True,
             name='bias'
         )
-        fan_in = self.kernel * self.kernel * self.in_channels
+        fan_in = self.kernel_size * self.kernel_size * self.in_channels
         self.scale = tf.sqrt(self.gain/fan_in)
 
     def call(self, inputs):
-        if self.pad:
-            x = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='REFLECT')
-        else:
-            x = inputs
-        output = tf.nn.conv2d(x, self.scale * self.w, strides=1, padding="VALID") + self.b
+        output = tf.nn.conv2d(inputs, self.scale * self.kernel, strides=1, padding="SAME") + self.bias
         return output
 
 

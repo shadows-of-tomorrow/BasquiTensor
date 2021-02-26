@@ -7,7 +7,8 @@ class Generator(Model):
 
     def __init__(self, *args, **kwargs):
         super(Generator, self).__init__(*args, **kwargs)
-        self.loss_type = "vanilla"
+        self.loss_type = None
+        self.latent_dist = None
 
     def compile(self, optimizer):
         super().compile(optimizer=optimizer)

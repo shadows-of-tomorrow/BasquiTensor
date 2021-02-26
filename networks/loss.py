@@ -76,20 +76,20 @@ def discriminator_wasserstein_loss(discriminator, x_real, x_fake, batch_size):
     gp_loss = wasserstein_gradient_penalty(discriminator, x_real, x_fake, batch_size)
     loss_total += gp_loss
     # 4. Compute and add drift penalty loss.
-    dp_loss = drift_penalty(y_real)
-    loss_total += dp_loss
+    # dp_loss = drift_penalty(y_real)
+    # loss_total += dp_loss
     # 5. Gather losses in dictionary.
     loss_dict = {
         'd_loss_total': loss_total,
         'd_loss_real': loss_real,
         'd_loss_fake': loss_fake,
         'd_gp_loss': gp_loss,
-        'd_dp_loss': dp_loss
+        'd_dp_loss': 0.0
     }
     return loss_dict, y_real
 
 
-def r1_gradient_penalty(discriminator, x_real, r1gp_weight=0.10):
+def r1_gradient_penalty(discriminator, x_real, r1gp_weight=10.0):
     with tf.GradientTape() as tape:
         tape.watch(x_real)
         y_sum = tf.reduce_sum(discriminator(x_real, training=True))

@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
-from networks.utils import generate_real_samples
-from networks.utils import generate_fake_samples
+from networks.utils import generate_real_images
+from networks.utils import generate_fake_images
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 
 
@@ -21,12 +21,12 @@ class FIDCalculator:
 
     def compute_fast_fid(self, generator):
         # 1. Generate fake images.
-        x_fake = generate_fake_samples(
+        x_fake = generate_fake_images(
             self.image_processor,
             generator,
             self.n_fake_samples,
             self.img_shape,
-            transform_type="new_to_zero_one"
+            transform_type="min_max_to_zero_one"
         )
         # 2. Compute activations on fake images.
         a_fake = np.transpose(self.inception_network.predict(x_fake))
@@ -45,8 +45,8 @@ class FIDCalculator:
 
     def compute_fid(self, generator):
         # 1. Generate real and fake images.
-        x_real = generate_real_samples(self.image_processor, self.n_real_samples, self.img_shape)
-        x_fake = generate_fake_samples(self.image_processor, generator, self.n_fake_samples, self.img_shape)
+        x_real = generate_real_images(self.image_processor, self.n_real_samples, self.img_shape)
+        x_fake = generate_fake_images(self.image_processor, generator, self.n_fake_samples, self.img_shape)
         # 2. Calculate activations.
         a_real = self.inception_network.predict(x_real)
         a_fake = self.inception_network.predict(x_fake)
@@ -71,7 +71,12 @@ class FIDCalculator:
         mu_loop = np.zeros((self.n_activations, 1))
         cov_loop = np.zeros((self.n_activations, self.n_activations))
         for _ in range(n_steps):
-            x_real = generate_real_samples(self.image_processor, self.chunk_size, self.img_shape, transform_type="old_to_zero_one")
+            x_real = generate_real_images(
+                self.image_processor,
+                self.chunk_size,
+                self.img_shape,
+                transform_type="old_to_zero_one"
+            )
             a_real = self.inception_network.predict(x_real)
             for k in range(self.chunk_size):
                 a_real_k = a_real[[k], :].reshape(-1, 1)

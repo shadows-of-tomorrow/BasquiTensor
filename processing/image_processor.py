@@ -31,12 +31,19 @@ class ImageProcessor:
         elif transform_type == "old_to_zero_one":
             return self.shift_numpy_array(numpy_array, self.old_range[0], self.old_range[1]-self.old_range[0])
         elif transform_type == "min_max_to_zero_one":
-            min_value = numpy_array.min()
-            max_value = numpy_array.max()
-            return self.shift_numpy_array(numpy_array, min_value, max_value-min_value)
+            return self._channel_wise_min_max(numpy_array)
         elif transform_type == "new_to_zero_one":
             a, b = self.compute_shift_coefficients(self.new_range, [0, 1])
             return self.shift_numpy_array(numpy_array, a, b)
+
+    @staticmethod
+    @jit(nopython=True)
+    def _channel_wise_min_max(x):
+        for k in range(x.shape[0]):
+            for l in range(x[k].shape[2]):
+                x_channel = x[k, :, :, l]
+                x[k, :, :, l] = (x_channel - x_channel.min()) / (x_channel.max() - x_channel.min())
+        return x
 
     @staticmethod
     def resize_numpy_array(numpy_array, shape):  # (n_samples, width, height, n_channels)

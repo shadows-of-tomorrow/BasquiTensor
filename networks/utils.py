@@ -1,9 +1,10 @@
 import numpy as np
-import tensorflow as tf
 from tensorflow.keras import backend
 from tensorflow.keras.models import clone_model
 from networks.layers import WeightedSum
 
+
+# ----------------------------- Network Modifications ------------------------------------------------------------------
 
 def update_fade_in(models, step, n_steps):
     alpha = step / float(n_steps - 1)
@@ -26,15 +27,49 @@ def clone_subclassed_model(model):
     return cloned_model
 
 
-def generate_latent_vectors(latent_dim, n_samples, dtype='float32'):
+# ----------------------------- Latent Vector Generation ---------------------------------------------------------------
+
+def generate_latent_vectors(latent_dim, n_samples, distribution="gaussian"):
+    if distribution == "gaussian":
+        return generate_latent_vectors_gaussian(latent_dim, n_samples)
+    elif distribution == "ball":
+        return generate_latent_vectors_ball(latent_dim, n_samples)
+    elif distribution == "bernoulli":
+        return generate_latent_vectors_bernoulli(latent_dim, n_samples)
+    else:
+        ValueError(f"Invalid distribution {distribution}!")
+
+
+def generate_latent_vectors_gaussian(latent_dim, n_samples):
+    z = np.random.normal(size=(n_samples, latent_dim))
+    return z.astype('float32')
+
+
+def generate_latent_vectors_ball(latent_dim, n_samples):
     z = np.random.normal(size=(n_samples, latent_dim))
     r = np.random.uniform(size=(n_samples, 1)) ** (1.0 / latent_dim)
     norm = np.reshape(np.sqrt(np.sum(z ** 2, 1)), newshape=(n_samples, 1))
-    return (r * z / norm).astype(dtype)
+    return (r * z / norm).astype('float32')
 
 
-def generate_fake_samples(image_processor, generator, n_samples, shape, dtype='float32', transform_type=None):
-    z = generate_latent_vectors(generator.input_shape[1], n_samples, dtype)
+def generate_latent_vectors_bernoulli(latent_dim, n_samples):
+    z = np.random.binomial(1, 0.50, size=(n_samples, latent_dim))
+    return z.astype('float32')
+
+
+# ----------------------------- Image Generation ----------------------------------------------------------------------
+
+def generate_real_images(image_processor, n_samples, shape, transform_type="old_to_new"):
+    x_real = image_processor.sample_numpy_array(n_samples)
+    if transform_type is not None:
+        x_real = image_processor.transform_numpy_array(x_real, transform_type)
+    if x_real.shape[1] != shape[0]:
+        x_real = image_processor.resize_numpy_array(x_real, shape)
+    return x_real.astype('float32')
+
+
+def generate_fake_images(image_processor, generator, n_samples, shape, transform_type=None):
+    z = generate_latent_vectors_gaussian(generator.input_shape[1], n_samples)
     x_fake = generator(z, training=False).numpy()
     if transform_type is not None:
         x_fake = image_processor.transform_numpy_array(x_fake, transform_type)
@@ -43,7 +78,7 @@ def generate_fake_samples(image_processor, generator, n_samples, shape, dtype='f
     return x_fake
 
 
-def generate_fake_samples_from_latents(z_latent, image_processor, generator, shape, transform_type=None):
+def generate_fake_images_from_latents(z_latent, image_processor, generator, shape, transform_type=None):
     x_fake = generator(z_latent, training=False).numpy()
     if transform_type is not None:
         x_fake = image_processor.transform_numpy_array(x_fake, transform_type)
@@ -51,18 +86,4 @@ def generate_fake_samples_from_latents(z_latent, image_processor, generator, sha
         x_fake = image_processor.resize_numpy_array(x_fake, shape)
     return x_fake
 
-
-def generate_real_samples(image_processor, n_samples, shape, dtype='float32', transform_type="old_to_new"):
-    x_real = image_processor.sample_numpy_array(n_samples)
-    if transform_type is not None:
-        x_real = image_processor.transform_numpy_array(x_real, transform_type)
-    if x_real.shape[1] != shape[0]:
-        x_real = image_processor.resize_numpy_array(x_real, shape)
-    return x_real.astype(dtype)
-
-
-def tensor_dict_to_numpy(tensor_dict):
-    for key, value in tensor_dict.items():
-        if isinstance(value, tf.Tensor):
-            tensor_dict[key] = value.numpy()
-    return tensor_dict
+# ----------------------------------------------------------------------------------------------------------------------

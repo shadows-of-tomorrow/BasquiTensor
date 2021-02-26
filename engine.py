@@ -14,7 +14,7 @@ class TrainingEngine:
 
     def __init__(self, run_id):
         self.run_id = run_id
-        self.parent_dir = os.path.dirname(os.path.dirname(__file__))
+        self.parent_dir = os.path.dirname(__file__)
         self.config_dir = os.path.join(self.parent_dir, 'io', 'input', 'configs')
 
     def run(self):

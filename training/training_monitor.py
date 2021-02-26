@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from networks.utils import generate_fake_samples
-from networks.utils import generate_real_samples
+from networks.utils import generate_fake_images
+from networks.utils import generate_real_images
 from training.fid_calculator import FIDCalculator
 
 
@@ -18,7 +18,7 @@ class TrainingMonitor:
         self.loss_store_ticks = 1
         self.fid_store_ticks = 100
         self.plot_store_ticks = 100
-        self.network_store_ticks = 10000
+        self.network_store_ticks = 1000
 
     def run(self, discriminator, generator, generator_smoothed, res, fade_in, n_step, done, **loss_dict):
         if n_step % self.loss_store_ticks == 0 or done:
@@ -68,17 +68,17 @@ class TrainingMonitor:
         res = generator.output.shape[1]
         # 2. Generate and scale fake images.
         n_fake = int(np.floor(self.n_plot_samples / 2))
-        x_fake = generate_fake_samples(
+        x_fake = generate_fake_images(
             image_processor=self.image_processor,
             generator=generator,
             n_samples=n_fake,
             shape=(res, res),
-            transform_type="new_to_zero_one"
+            transform_type="min_max_to_zero_one"
         )
         x_fake = [np.clip(x_fake[k], 0.0, 1.0) for k in range(len(x_fake))]
         # 3. Generate and scale real images.
         n_real = int(np.floor(self.n_plot_samples / 2))
-        x_real = generate_real_samples(
+        x_real = generate_real_images(
             image_processor=self.image_processor,
             n_samples=n_real,
             shape=(res, res),

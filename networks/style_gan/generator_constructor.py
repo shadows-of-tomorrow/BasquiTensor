@@ -23,11 +23,13 @@ class GeneratorConstructorStyle:
         self.n_blocks = self.n_styles // 2
         # 2. Other fields.
         self.latent_size = network_config['latent_size']
+        self.latent_dist = network_config['latent_dist']
         self.n_base_filters = network_config['n_base_filters']
         self.n_max_filters = network_config['n_max_filters']
-        self.n_dense_layers = network_config['n_dense_layers']
+        self.n_mapping_layers = network_config['style_gan_params']['n_mapping_layers']
         # 3. Kernel initialization.
         self.adam_params = network_config['adam_params']
+        self.loss_type = network_config['loss_type']
         self.kernel_init = HeNormal()
 
     def run(self):
@@ -40,10 +42,12 @@ class GeneratorConstructorStyle:
         # 4. Construct and add next blocks.
         for stage in range(2, self.n_blocks + 1):
             x = self._add_next_block(x, w_latent, stage)
-            y = UpSampling2D(interpolation='bilinear')(y)
+            y = UpSampling2D()(y)
             y = self._add_to_rgb(x, y)
         # 5. Construct and compile generator.
         generator = Generator(z_latent, y)
+        generator.loss_type = self.loss_type
+        generator.latent_dist = self.latent_dist
         self._compile_model(generator)
         return [[generator, generator]]
 
@@ -68,7 +72,7 @@ class GeneratorConstructorStyle:
     def _add_next_block(self, x, w_latent, stage):
         n_filters = self._compute_filters_at_stage(stage)
         # 1. Double resolution operation.
-        x = UpSampling2D(interpolation='bilinear')(x)
+        x = UpSampling2D()(x)
         # 2. First conv (3x3) layer + noise.
         x = Conv2DEQL(out_channels=n_filters, kernel=3)(x)
         x = NoiseModulation()(x)
@@ -105,7 +109,7 @@ class GeneratorConstructorStyle:
         return z_latent, w_latent
 
     def _add_mapping_layers(self, x):
-        for k in range(self.n_dense_layers):
+        for k in range(self.n_mapping_layers):
             x = DenseEQL(units=self.latent_size, lrmul=0.01)(x)
             x = LeakyReLU(0.20)(x)
         return x

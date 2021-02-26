@@ -63,7 +63,7 @@ class NetworkTrainer:
             # 3.3 Train discriminator.
             d_loss = discriminator.train_on_batch(self.image_processor, generator, n_batch, shape, self.image_augmenter)
             # 3.4 Train generator.
-            z_latent = generate_latent_vectors(latent_dim, n_batch)
+            z_latent = generate_latent_vectors(latent_dim, n_batch, distribution=generator.latent_dist)
             g_loss = generator.train_on_batch(z_latent, discriminator, n_batch, self.image_augmenter)
             # 3.5 Update "smoothed" generator weights.
             update_smoothed_weights(smoothed_generator, generator)

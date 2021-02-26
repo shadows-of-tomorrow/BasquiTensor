@@ -2,8 +2,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
-from networks.utils import generate_latent_vectors
-from networks.utils import generate_fake_samples_from_latents
+from networks.utils import generate_latent_vectors_ball
+from networks.utils import generate_fake_images_from_latents
 from networks.layers import Constant
 from networks.layers import DenseEQL
 from networks.layers import Conv2DEQL
@@ -54,21 +54,21 @@ class Painter:
             ValueError(f"Painting type {painting_type} not recognized.")
 
     def _generate_basic_paintings(self, generator, n_paintings, shape):
-        z = generate_latent_vectors(generator.input_shape[1], n_paintings)
-        x = generate_fake_samples_from_latents(z, self.image_processor, generator, shape, transform_type='new_to_zero_one')
+        z = generate_latent_vectors_ball(generator.input_shape[1], n_paintings)
+        x = generate_fake_images_from_latents(z, self.image_processor, generator, shape, transform_type='min_max_to_zero_one')
         return x
 
     def _generate_interpolated_paintings(self, generator, shape, n_int):
-        z_pair = generate_latent_vectors(generator.input_shape[1], 2)
+        z_pair = generate_latent_vectors_ball(generator.input_shape[1], 2)
         z_int = [(k/n_int)*z_pair[0, :] + (1-k/n_int)*z_pair[1, :] for k in range(n_int)]
         z_int = np.stack(z_int, axis=0)
-        x = generate_fake_samples_from_latents(z_int, self.image_processor, generator, shape, transform_type='new_to_zero_one')
+        x = generate_fake_images_from_latents(z_int, self.image_processor, generator, shape, transform_type="min_max_to_zero_one")
         return x
 
 
 if __name__ == "__main__":
-    name = 'bob_ross_64.h5'
+    name = 'bob_ross_128.h5'
     dir_in = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'input', 'generators')
     dir_out = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'painting')
     painter = Painter(dir_in, dir_out, name, ImageProcessor())
-    painter.paint(n_paintings=100, painting_type="basic")
+    painter.paint(n_paintings=100, painting_type="interpolated")

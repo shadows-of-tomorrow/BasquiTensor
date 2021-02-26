@@ -24,6 +24,7 @@ class DiscriminatorConstructorStyle:
         self.n_max_filters = network_config['n_max_filters']
         # Other fields.
         self.adam_params = network_config['adam_params']
+        self.loss_type = network_config['loss_type']
         self.kernel_init = HeNormal()
 
     def run(self):
@@ -37,6 +38,7 @@ class DiscriminatorConstructorStyle:
         output_layer = self._add_terminal_block(x)
         # 4. Construct and compile discriminator.
         discriminator = Discriminator(input_layer, output_layer)
+        discriminator.loss_type = self.loss_type
         self._compile_model(discriminator)
         return [[discriminator, discriminator]]
 

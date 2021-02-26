@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from networks.utils import generate_fake_samples
-from networks.utils import generate_real_samples
+from networks.utils import generate_fake_images
+from networks.utils import generate_real_images
 from networks.loss import discriminator_loss
 
 
@@ -19,10 +19,10 @@ class Discriminator(Model):
 
     def train_on_batch(self, image_processor, generator, batch_size, shape, image_augmenter):
         # 1. Generate (augmented) real samples.
-        x_real = generate_real_samples(image_processor, batch_size, shape, transform_type='old_to_new')
+        x_real = generate_real_images(image_processor, batch_size, shape, transform_type='old_to_new')
         x_real = image_augmenter.run(x_real, is_tensor=False)
         # 2. Generate (augmented) fake samples.
-        x_fake = generate_fake_samples(image_processor, generator, batch_size, shape, transform_type=None)
+        x_fake = generate_fake_images(image_processor, generator, batch_size, shape, transform_type=None)
         x_fake = image_augmenter.run(x_fake, is_tensor=False)
         # 3. Construct loss dict.
         with tf.GradientTape() as tape:
@@ -30,7 +30,7 @@ class Discriminator(Model):
         # 4. Compute gradients.
         gradient = tape.gradient(loss_dict['d_loss_total'], self.variables)
         # 5. Apply gradients.
-        self.optimizer.apply_gradients(zip(gradient, self.variables))
+        self.optimizer.apply_gradients((grad, var) for (grad, var) in zip(gradient, self.variables) if grad is not None)
         # 6. Adjust augmentation probability.
         aug_dict = self._adjust_augmentation_probability(y_real, image_augmenter, batch_size)
         return {**loss_dict, **aug_dict}
