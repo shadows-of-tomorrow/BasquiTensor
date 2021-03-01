@@ -35,6 +35,8 @@ class ImageProcessor:
         elif transform_type == "new_to_zero_one":
             a, b = self.compute_shift_coefficients(self.new_range, [0, 1])
             return self.shift_numpy_array(numpy_array, a, b)
+        else:
+            return numpy_array
 
     @staticmethod
     @jit(nopython=True)

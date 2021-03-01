@@ -7,9 +7,9 @@ class StyleGANGenerator(Model):
 
     def __init__(self, *args, **kwargs):
         super(StyleGANGenerator, self).__init__(*args, **kwargs)
-        self.loss_type = None
-        self.latent_dist = None
-        self.n_grad_acc_steps = 16
+        self.loss_type = "wasserstein"
+        self.latent_dist = "gaussian"
+        self.n_grad_acc_steps = 1
 
     def compile(self, optimizer):
         super().compile(optimizer=optimizer)

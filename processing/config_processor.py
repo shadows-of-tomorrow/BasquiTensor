@@ -9,6 +9,7 @@ class ConfigProcessor:
 
     def run(self, parent_dir, config_dir):
         configs = self._read_configs(config_dir)
+        configs = self._enhance_configs(configs)
         self._store_configs(parent_dir, configs)
         return configs
 
@@ -34,3 +35,18 @@ class ConfigProcessor:
                 config = json.load(file)
             configs.append(config)
         return configs
+
+    def _enhance_configs(self, configs):
+        new_configs = []
+        for config in configs:
+            if config['network_parameters']['use_checkpoint'] == "True":
+                self._add_checkpoint_location(config)
+            new_configs.append(config)
+        return new_configs
+
+    @staticmethod
+    def _add_checkpoint_location(config):
+        checkpoint_location = config['directories']['output']
+        checkpoint_location = os.path.join(checkpoint_location, 'networks')
+        checkpoint_location = os.path.join(checkpoint_location, os.listdir(checkpoint_location)[0])
+        config['network_parameters']['checkpoint_location'] = checkpoint_location

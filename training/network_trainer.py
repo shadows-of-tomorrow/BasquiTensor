@@ -30,7 +30,7 @@ class NetworkTrainer:
         generator = generators[0][0]
         # 2. Train initial models.
         res = generator.output.shape[1]
-        print(f"Training gans at {res}x{res} resolution...")
+        print(f"Training networks at {res}x{res} resolution...")
         self._train_epochs(generator, discriminator, self.n_images[0], self.n_batches[0], False)
         # 3. Train models at each growth stage.
         for k in range(1, len(discriminators)):
@@ -39,7 +39,7 @@ class NetworkTrainer:
             [gen_tuning, gen_fade_in] = generators[k]
             # 3.2 Train fade-in models.
             res = gen_tuning.output.shape[1]
-            print(f"Training gans at {res}x{res} resolution...")
+            print(f"Training networks at {res}x{res} resolution...")
             self._train_epochs(gen_fade_in, dis_fade_in, self.n_images[k], self.n_batches[k], True)
             # 3.3 Train tuning models.
             self._train_epochs(gen_tuning, dis_tuning, self.n_images[k], self.n_batches[k], False)

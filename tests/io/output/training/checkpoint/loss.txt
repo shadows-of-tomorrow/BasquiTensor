@@ -1,0 +1,2 @@
+Resolution:256,Fade-in:False,d_loss_total:-76634.3203125,d_loss_real:4145.44873046875,d_loss_fake:-84676.265625,d_gp_loss:3896.5,d_ada_target:-0.005986013999986019,p_augment:0.0,g_loss_total:265181.34375,time:10.171003341674805,memory:48.2,
+Resolution:256,Fade-in:False,d_loss_total:-50203.125,d_loss_real:4140.33984375,d_loss_fake:-58388.2421875,d_gp_loss:4044.776611328125,d_ada_target:-0.005986013999986019,p_augment:0.0,g_loss_total:350481.5,time:10.082943439483643,memory:48.3,

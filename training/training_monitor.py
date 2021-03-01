@@ -18,7 +18,7 @@ class TrainingMonitor:
         self.loss_store_ticks = 1
         self.fid_store_ticks = 100
         self.plot_store_ticks = 100
-        self.network_store_ticks = 1000
+        self.network_store_ticks = 100
 
     def run(self, discriminator, generator, generator_smoothed, res, fade_in, n_step, done, **loss_dict):
         if n_step % self.loss_store_ticks == 0 or done:
@@ -53,13 +53,7 @@ class TrainingMonitor:
         message += "\n"
         # 2. Write message to file.
         file_dir = self.image_processor.dir_out + '/loss.txt'
-        if os.path.exists(file_dir):
-            mode = 'a'
-        else:
-            mode = 'w'
-        with open(file_dir, mode) as file:
-            file.write(message)
-            file.close()
+        self._write_message_to_file(file_dir, message)
 
     def store_plots(self, generator, step, fade_in):
         """ Generates and stores plots based on current generator. """
@@ -129,3 +123,20 @@ class TrainingMonitor:
         discriminator.save(os.path.join(file_dir, f"discriminator.h5"))
         generator.save(os.path.join(file_dir, f"generator.h5"))
         generator_smoothed.save(os.path.join(file_dir, "generator_smoothed.h5"))
+        # 4. Write additional network fields to file.
+        file_dir = file_dir + '/fields.txt'
+        message = f"loss_type:{discriminator.loss_type},"
+        message += f"ada_target:{discriminator.ada_target},"
+        message += f"ada_smoothing:{discriminator.ada_smoothing},"
+        message += f"n_grad_acc_steps:{discriminator.n_grad_acc_steps},"
+        message += f"latent_dist:{generator.latent_dist},\n"
+        self._write_message_to_file(file_dir, message)
+
+    def _write_message_to_file(self, file_dir, message):
+        if os.path.exists(file_dir):
+            mode = 'a'
+        else:
+            mode = 'w'
+        with open(file_dir, mode) as file:
+            file.write(message)
+            file.close()

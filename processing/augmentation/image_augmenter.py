@@ -7,9 +7,9 @@ from processing.augmentation.corruption_transformer import CorruptionTransformer
 
 class ImageAugmenter:
 
-    def __init__(self):
+    def __init__(self, p_augment=0.00):
         # Set augmentation parameters.
-        self.p_augment = 0.00
+        self.p_augment = p_augment
         self.p_augment_target = 0.60
         self.p_augment_threshold = 0.01
         self.p_augment_max = 0.80

@@ -1,0 +1,7 @@
+loss_type:wasserstein,ada_target:0.0010000000000000009,ada_smoothing:0.999,n_grad_acc_steps:16,latent_dist:gaussian,
+loss_type:wasserstein,ada_target:-9.999999999999159e-07,ada_smoothing:0.999,n_grad_acc_steps:16,latent_dist:gaussian,
+loss_type:wasserstein,ada_target:-0.001000999000000001,ada_smoothing:0.999,n_grad_acc_steps:16,latent_dist:gaussian,
+loss_type:wasserstein,ada_target:-0.0019999980010000015,ada_smoothing:0.999,n_grad_acc_steps:16,latent_dist:gaussian,
+loss_type:wasserstein,ada_target:-0.0029979980029990025,ada_smoothing:0.999,n_grad_acc_steps:16,latent_dist:gaussian,
+loss_type:wasserstein,ada_target:-0.003995000004996004,ada_smoothing:0.999,n_grad_acc_steps:16,latent_dist:gaussian,
+loss_type:wasserstein,ada_target:-0.004991005004991009,ada_smoothing:0.999,n_grad_acc_steps:16,latent_dist:gaussian,

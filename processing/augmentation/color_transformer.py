@@ -25,6 +25,7 @@ class ColorTransformer:
     def transform_tensors(self, x, batch_size, width, height, channels):
         c = self._construct_color_transforms(batch_size, width, height)
         x = self._apply_color_transforms(c, x, batch_size, width, height, channels)
+        return x
 
     def _apply_color_transforms(self, c, x, batch_size, width, height, channels):
         x = tf.transpose(x, [0, 3, 2, 1])
