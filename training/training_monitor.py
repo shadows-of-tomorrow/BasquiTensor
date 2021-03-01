@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from gans.utils import generate_fake_images
-from gans.utils import generate_real_images
+from networks.utils import generate_fake_images
+from networks.utils import generate_real_images
 from training.fid_calculator import FIDCalculator
 
 
@@ -114,9 +114,9 @@ class TrainingMonitor:
         plt.close()
 
     def store_networks(self, discriminator, generator, generator_smoothed, fade_in):
-        """ Stores Keras gans for later use. """
+        """ Stores Keras networks for later use. """
         # 1. Extract relevant fields.
-        dir_out = os.path.join(self.image_processor.dir_out, 'gans')
+        dir_out = os.path.join(self.image_processor.dir_out, 'networks')
         res = generator.output.shape[1]
         # 2. Create output directories (if these do not exist).
         if fade_in:
@@ -125,7 +125,7 @@ class TrainingMonitor:
             file_dir = os.path.join(dir_out, f'{res}x{res}_tuned')
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
-        # 3. Store gans.
+        # 3. Store networks.
         discriminator.save(os.path.join(file_dir, f"discriminator.h5"))
         generator.save(os.path.join(file_dir, f"generator.h5"))
         generator_smoothed.save(os.path.join(file_dir, "generator_smoothed.h5"))

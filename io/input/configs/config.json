@@ -3,19 +3,18 @@
   {
     "model": "StyleGAN",
     "loss_type": "wasserstein",
-    "latent_distribution": "gaussian",
+    "latent_dist": "gaussian",
     "output_res": 256,
     "latent_size": 512,
-    "n_base_filters": 2048,
+    "n_base_filters": 8192,
     "n_max_filters": 512,
     "adam_params": {"lr": 0.0020, "beta_1": 0.00, "beta_2": 0.99, "epsilon": 10e-8},
-    "style_gan_params": {"n_mapping_layers": 2, "use_growing": "false"},
-    "super_res_gan_params": {"placeholder": 3}
+    "stylegan_params": {"n_mapping_layers": 2}
   },
   "training_parameters":
   {
-    "monitor_fid": "True",
-    "n_batches": [8],
+    "monitor_fid": "False",
+    "n_batches": [2],
     "n_images": [15000000]
   },
   "directories":

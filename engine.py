@@ -4,7 +4,7 @@ from datetime import datetime
 os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from gans.factory import NetworkFactory
+from networks.factory import NetworkFactory
 from training.network_trainer import NetworkTrainer
 from processing.image_processor import ImageProcessor
 from processing.config_processor import ConfigProcessor
@@ -36,7 +36,7 @@ class TrainingEngine:
 
     @staticmethod
     def _construct_networks(configs):
-        print("Constructing gans...")
+        print("Constructing networks...")
         network_configs = [config['network_parameters'] for config in configs]
         network_constructors = [NetworkFactory(**network_config) for network_config in network_configs]
         networks_list = [network_constructor.run() for network_constructor in network_constructors]
@@ -52,7 +52,7 @@ class TrainingEngine:
     def _train_networks(networks, network_trainers):
         assert len(networks) == len(network_trainers)
         for k in range(len(network_trainers)):
-            network_trainers[k].transform_tensors(networks[k])
+            network_trainers[k].run(networks[k])
 
 
 if __name__ == "__main__":

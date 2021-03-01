@@ -5,10 +5,10 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import AveragePooling2D
-from gans.stylegan.stylegan_discriminator import StyleGANDiscriminator
-from gans.layers import MinibatchStDev
-from gans.layers import DenseEQL
-from gans.layers import Conv2DEQL
+from networks.stylegan.stylegan_discriminator import StyleGANDiscriminator
+from networks.layers import MinibatchStDev
+from networks.layers import DenseEQL
+from networks.layers import Conv2DEQL
 
 
 class StyleGANDiscriminatorConstructor:
@@ -39,7 +39,7 @@ class StyleGANDiscriminatorConstructor:
         discriminator = StyleGANDiscriminator(input_layer, output_layer)
         discriminator.loss_type = self.loss_type
         self._compile_model(discriminator)
-        return [[discriminator, discriminator]]
+        return [[discriminator, None]]
 
     def _construct_initial_block(self):
         n_filters_1 = self._compute_n_filters_at_stage(1)

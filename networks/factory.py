@@ -1,5 +1,5 @@
-from gans.stylegan.stylegan_generator_constructor import StyleGANGeneratorConstructor
-from gans.stylegan.stylegan_discriminator_constructor import StyleGANDiscriminatorConstructor
+from networks.stylegan.stylegan_generator_constructor import StyleGANGeneratorConstructor
+from networks.stylegan.stylegan_discriminator_constructor import StyleGANDiscriminatorConstructor
 
 
 class NetworkFactory:

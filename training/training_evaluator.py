@@ -19,16 +19,16 @@ class TrainingEvaluator:
         self.memory = 'memory'
         self.ada_target = 'd_ada_target'
         self.p_augment = 'p_augment'
-        self.scale_type = 'square_root'
+        self.scale_type = "square_root"
 
     def plot_training_progress(self):
         loss_dict = self._read_txt_file(self.dir_train, 'loss.txt')
-        fid_dict = self._read_txt_file(self.dir_train, 'fid.txt')
+        #fid_dict = self._read_txt_file(self.dir_train, 'fid.txt')
         self._plot_network_losses(loss_dict)
         self._plot_gradient_penalty(loss_dict)
         self._plot_batch_processing_time(loss_dict)
         self._plot_image_augmentation(loss_dict)
-        self._plot_ffid(fid_dict)
+        #self._plot_ffid(fid_dict)
         plt.show()
 
     def _plot_ffid(self, fid_dict):

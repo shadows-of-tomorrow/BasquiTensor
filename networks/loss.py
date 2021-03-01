@@ -4,7 +4,7 @@ import tensorflow as tf
 def generator_loss(discriminator, generator, image_augmenter, z_latent, loss_type):
     # 1. Generate (augmented) fake images with trainable generator.
     x_fake = generator(z_latent, training=True)
-    x_fake = image_augmenter.transform_tensors(x_fake, is_tensor=True)
+    x_fake = image_augmenter.augment_tensors(x_fake, is_tensor=True)
     # 2. Compute generator loss.
     if loss_type == "vanilla":
         return generator_vanilla_loss(discriminator, x_fake)

@@ -1,5 +1,5 @@
 import numpy as np
-from gans.layers import WeightedSum
+from networks.layers import WeightedSum
 from tensorflow.keras import backend
 from tensorflow.keras.models import clone_model
 

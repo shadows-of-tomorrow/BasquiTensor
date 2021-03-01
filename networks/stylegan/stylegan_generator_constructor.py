@@ -4,12 +4,12 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import UpSampling2D
-from gans.layers import Constant
-from gans.layers import DenseEQL
-from gans.layers import Conv2DEQL
-from gans.layers import NoiseModulation
-from gans.layers import AdaptiveInstanceModulation
-from gans.stylegan.stylegan_generator import StyleGANGenerator
+from networks.layers import Constant
+from networks.layers import DenseEQL
+from networks.layers import Conv2DEQL
+from networks.layers import NoiseModulation
+from networks.layers import AdaptiveInstanceModulation
+from networks.stylegan.stylegan_generator import StyleGANGenerator
 
 
 class StyleGANGeneratorConstructor:
@@ -25,7 +25,7 @@ class StyleGANGeneratorConstructor:
         self.latent_dist = network_config['latent_dist']
         self.n_base_filters = network_config['n_base_filters']
         self.n_max_filters = network_config['n_max_filters']
-        self.n_mapping_layers = network_config['style_gan_params']['n_mapping_layers']
+        self.n_mapping_layers = network_config['stylegan_params']['n_mapping_layers']
         self.adam_params = network_config['adam_params']
         self.loss_type = network_config['loss_type']
         self.relu_slope = 0.20
@@ -47,7 +47,7 @@ class StyleGANGeneratorConstructor:
         generator.loss_type = self.loss_type
         generator.latent_dist = self.latent_dist
         self._compile_model(generator)
-        return [[generator, generator]]
+        return [[generator, None]]
 
     def _construct_mapping_network(self):
         z_latent = Input(shape=(self.latent_size,), name="mn_latent")

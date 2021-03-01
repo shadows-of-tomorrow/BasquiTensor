@@ -48,13 +48,13 @@ class Conv2DEQL(Layer):
     def __init__(self, n_channels, kernel_size=3, gain=2, **kwargs):
         super(Conv2DEQL, self).__init__(kwargs)
         self.kernel_size = kernel_size
-        self.n_channels = n_channels
+        self.out_channels = n_channels
         self.gain = gain
 
     def get_config(self):
         config = super().get_config().copy()
         config.update({'kernel_size': self.kernel_size})
-        config.update({'n_channels': self.n_channels})
+        config.update({'n_channels': self.out_channels})
         config.update({'gain': self.gain})
         return config
 
@@ -62,13 +62,13 @@ class Conv2DEQL(Layer):
         self.in_channels = input_shape[-1]
         initializer = RandomNormal(mean=0.0, stddev=1.0)
         self.kernel = self.add_weight(
-            shape=[self.kernel_size, self.kernel_size, self.in_channels, self.n_channels],
+            shape=[self.kernel_size, self.kernel_size, self.in_channels, self.out_channels],
             initializer=initializer,
             trainable=True,
             name='kernel'
         )
         self.bias = self.add_weight(
-            shape=(self.n_channels,),
+            shape=(self.out_channels,),
             initializer='zeros',
             trainable=True,
             name='bias'

@@ -1,11 +1,11 @@
 import time
 import psutil
-from gans.utils import update_fade_in
-from gans.utils import update_smoothed_weights
-from gans.utils import generate_latent_vectors
-from gans.utils import clone_subclassed_model
+from networks.utils import update_fade_in
+from networks.utils import update_smoothed_weights
+from networks.utils import generate_latent_vectors
+from networks.utils import clone_subclassed_model
 from training.training_monitor import TrainingMonitor
-from processing.image_augmenter import ImageAugmenter
+from processing.augmentation.image_augmenter import ImageAugmenter
 
 
 class NetworkTrainer:
@@ -20,7 +20,7 @@ class NetworkTrainer:
         self.start_time = time.time()
 
     def run(self, networks):
-        # 0. Unpack gans.
+        # 0. Unpack networks.
         discriminators = networks['discriminators']
         generators = networks['generators']
         assert len(discriminators) == len(generators)
