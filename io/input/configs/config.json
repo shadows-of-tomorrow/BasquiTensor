@@ -5,9 +5,9 @@
     "model": "StyleGAN",
     "loss_type": "wasserstein",
     "latent_dist": "gaussian",
-    "output_res": 8,
+    "output_res": 16,
     "latent_size": 128,
-    "n_base_filters": 2048,
+    "n_base_filters": 8192,
     "n_max_filters": 512,
     "adam_params": {"lr": 0.0020, "beta_1": 0.00, "beta_2": 0.99, "epsilon": 10e-8},
     "stylegan_params": {"n_mapping_layers": 2}
@@ -22,6 +22,6 @@
   "directories":
   {
     "input": "io/input/images/bob_ross",
-    "output": "io/output/training/bob_ross_8x8"
+    "output": "io/output/training/bob_ross_16x16"
   }
 }

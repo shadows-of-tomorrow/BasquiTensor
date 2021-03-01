@@ -11,8 +11,8 @@ class StyleGANDiscriminator(Model):
         super(StyleGANDiscriminator, self).__init__(*args, **kwargs)
         self.step_tracker = 1
         self.loss_type = "wasserstein"
-        self.ada_target = 0.00
-        self.ada_smoothing = 0.00
+        self.ada_target = -1.00
+        self.ada_smoothing = 0.99
         self.n_grad_acc_steps = 1
 
     def compile(self, optimizer):

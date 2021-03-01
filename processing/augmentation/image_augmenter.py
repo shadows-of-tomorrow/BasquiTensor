@@ -32,7 +32,7 @@ class ImageAugmenter:
         self.p_augment = p_augment_new
         self.geometry_transformer.p_augment = p_augment_new
         self.color_transformer.p_augment = p_augment_new
-        self.corruption_transformer = p_augment_new
+        self.corruption_transformer.p_augment = p_augment_new
 
     def _compute_augmentation_probability(self, rt, n_shown_images):
         p_augment = self.p_augment + (n_shown_images/self.n_adjust_imgs) * np.sign(rt - self.p_augment_target)
