@@ -27,16 +27,22 @@ def load_network_checkpoint(network_path):
     # 2. Read pickled (.h5) networks.
     discriminator = load_model(os.path.join(network_path, 'discriminator.h5'), CUSTOM_OBJECTS)
     generator = load_model(os.path.join(network_path, 'generator.h5'), CUSTOM_OBJECTS)
+    generator_smoothed = load_model(os.path.join(network_path, 'generator_smoothed.h5'), CUSTOM_OBJECTS)
     # 3. Convert pickled networks to corresponding custom model class.
     discriminator = convert_and_compile_network(discriminator, fields, "StyleGANDiscriminator", True)
     generator = convert_and_compile_network(generator, fields, "StyleGANGenerator", True)
+    generator_smoothed = convert_and_compile_network(generator_smoothed, fields, "StyleGANGenerator", False)
     # 4. Convert networks to correct format.
-    networks = convert_networks_to_checkpoint_format(discriminator, generator)
+    networks = convert_networks_to_checkpoint_format(discriminator, generator, generator_smoothed)
     return networks
 
 
-def convert_networks_to_checkpoint_format(discriminator, generator):
-    networks = {'discriminators': [[discriminator, None]], 'generators': [[generator, None]]}
+def convert_networks_to_checkpoint_format(discriminator, generator, generator_smoothed):
+    networks = {
+        'discriminators': [[discriminator, None]],
+        'generators': [[generator, None]],
+        'generators_smoothed': [[generator_smoothed, None]]
+    }
     return networks
 
 

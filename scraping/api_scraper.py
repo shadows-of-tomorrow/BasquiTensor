@@ -6,7 +6,7 @@ import requests
 MET_API_URL = "https://collectionapi.metmuseum.org/public/collection/v1/"
 
 
-class APIScraper:
+class MetAPIScraper:
 
     def __init__(self, dir_out):
         self.base_url = self._construct_base_url()
@@ -95,5 +95,5 @@ class APIScraper:
 
 if __name__ == "__main__":
     dir_out = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'scraping')
-    scraper = APIScraper(dir_out)
+    scraper = MetAPIScraper(dir_out)
     scraper.scrape_images(q="Portrait", medium="Paintings", isOnView="true")

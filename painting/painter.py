@@ -9,13 +9,19 @@ from networks.layers import Constant
 from networks.layers import DenseEQL
 from networks.layers import Conv2DEQL
 from networks.layers import NoiseModulation
+from networks.layers import MinibatchStDev
 from networks.layers import AdaptiveInstanceModulation
+from networks.stylegan.stylegan_generator import StyleGANGenerator
+from networks.stylegan.stylegan_discriminator import StyleGANDiscriminator
 from processing.image_processor import ImageProcessor
 
-CUSTOM_LAYER_MAPPING = {
+CUSTOM_OBJECTS = {
+    'StyleGANDiscriminator': StyleGANDiscriminator,
+    'StyleGANGenerator': StyleGANGenerator,
+    'DenseEQL': DenseEQL,
+    'Conv2DEQL': Conv2DEQL,
+    "MinibatchStDev": MinibatchStDev,
     "Constant": Constant,
-    "DenseEQL": DenseEQL,
-    "Conv2DEQL": Conv2DEQL,
     "NoiseModulation": NoiseModulation,
     "AdaptiveInstanceModulation": AdaptiveInstanceModulation
 }
@@ -30,7 +36,7 @@ class Painter:
         self.image_processor = image_processor
         self.generator = self._load_generator(self.gen_name)
         self.base_shape = self.generator.output_shape[1:3]
-        self.n_int_steps = 100
+        self.n_int_steps = 10
 
     def paint(self, n_paintings, painting_type="basic"):
         x_fake = self._generate_paintings(self.generator, n_paintings, self.base_shape, painting_type)
@@ -38,7 +44,7 @@ class Painter:
 
     def _load_generator(self, gen_name):
         dir_gen = os.path.join(self.dir_in, gen_name)
-        return load_model(dir_gen, CUSTOM_LAYER_MAPPING)
+        return load_model(dir_gen, CUSTOM_OBJECTS)
 
     def _store_paintings(self, paintings):
         for k in range(paintings.shape[0]):
@@ -72,4 +78,4 @@ if __name__ == "__main__":
     dir_in = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'input', 'generators')
     dir_out = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'painting')
     painter = Painter(dir_in, dir_out, name, ImageProcessor())
-    painter.paint(n_paintings=100, painting_type="interpolated")
+    painter.paint(n_paintings=10, painting_type="interpolated")

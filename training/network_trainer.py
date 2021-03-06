@@ -23,15 +23,23 @@ class NetworkTrainer:
         # 0. Unpack networks.
         discriminators = networks['discriminators']
         generators = networks['generators']
+        if 'generators_smoothed' in networks:
+            generators_smoothed = networks['generators_smoothed']
+        else:
+            generators_smoothed = None
         assert len(discriminators) == len(generators)
         assert len(discriminators) == len(self.n_batches) == len(self.n_images)
         # 1. Extract initial models.
         discriminator = discriminators[0][0]
         generator = generators[0][0]
+        if generators_smoothed is not None:
+            smoothed_generator = generators_smoothed[0][0]
+        else:
+            smoothed_generator = None
         # 2. Train initial models.
         res = generator.output.shape[1]
         print(f"Training networks at {res}x{res} resolution...")
-        self._train_epochs(generator, discriminator, self.n_images[0], self.n_batches[0], False)
+        self._train_epochs(generator, discriminator, self.n_images[0], self.n_batches[0], False, smoothed_generator)
         # 3. Train models at each growth stage.
         for k in range(1, len(discriminators)):
             # 3.1 Get normal and fade in models.
@@ -40,11 +48,11 @@ class NetworkTrainer:
             # 3.2 Train fade-in models.
             res = gen_tuning.output.shape[1]
             print(f"Training networks at {res}x{res} resolution...")
-            self._train_epochs(gen_fade_in, dis_fade_in, self.n_images[k], self.n_batches[k], True)
+            self._train_epochs(gen_fade_in, dis_fade_in, self.n_images[k], self.n_batches[k], True, None)
             # 3.3 Train tuning models.
-            self._train_epochs(gen_tuning, dis_tuning, self.n_images[k], self.n_batches[k], False)
+            self._train_epochs(gen_tuning, dis_tuning, self.n_images[k], self.n_batches[k], False, None)
 
-    def _train_epochs(self, generator, discriminator, n_images, n_batch, fade_in):
+    def _train_epochs(self, generator, discriminator, n_images, n_batch, fade_in, smoothed_generator):
         # 1. Compute number of training steps.
         n_steps = n_images // n_batch
         # 2. Get shape of image.
@@ -52,7 +60,8 @@ class NetworkTrainer:
         shape = tuple(generator.output.shape[1:-1].as_list())
         res = shape[0]
         # 3. Clone generator.
-        smoothed_generator = clone_subclassed_model(generator)
+        if smoothed_generator is None:
+            smoothed_generator = clone_subclassed_model(generator)
         # 3. Train models for n_steps iterations.
         for k in range(n_steps):
             # 3.0 Update checks.
