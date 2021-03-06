@@ -6,3 +6,4 @@ venv
 io/output
 io/input/images
 io/input/generators
+tests/io
