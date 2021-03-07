@@ -7,7 +7,7 @@ class FolderCleaner:
     def __init__(self, dir_in, dir_out):
         self.dir_in = dir_in
         self.dir_out = dir_out
-        self.shape_out = (16, 16)
+        self.shape_out = (256, 256)
 
     def clean_folder(self):
         names = os.listdir(self.dir_in)

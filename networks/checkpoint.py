@@ -54,7 +54,6 @@ def convert_and_compile_network(network, fields, network_type, compile):
         discriminator.loss_type = fields['loss_type']
         discriminator.ada_target = fields['ada_target']
         discriminator.ada_smoothing = fields['ada_smoothing']
-        discriminator.n_grad_acc_steps = int(fields['n_grad_acc_steps'])
         return discriminator
     elif network_type == "StyleGANGenerator":
         generator = StyleGANGenerator(network.input, network.output)
@@ -62,7 +61,6 @@ def convert_and_compile_network(network, fields, network_type, compile):
             generator.compile(optimizer=network.optimizer)
         generator.loss_type = fields['loss_type']
         generator.latent_dist = fields['latent_dist']
-        generator.n_grad_acc_steps = int(fields['n_grad_acc_steps'])
         return generator
     else:
         ValueError(f"Network type {network_type} not recognized.")

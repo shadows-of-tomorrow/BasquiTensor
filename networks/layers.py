@@ -35,10 +35,11 @@ class DenseEQL(Layer):
             name='bias'
         )
         fan_in = self.in_channels
-        self.scale = tf.cast(tf.sqrt(self.gain/fan_in), dtype='float16')
+        self.scale = tf.sqrt(self.gain/fan_in)
 
     def call(self, inputs):
-        output = tf.matmul(inputs, self.scale * self.kernel) + self.bias
+        scale = tf.cast(self.scale, self.kernel.dtype)
+        output = tf.matmul(inputs, scale * self.kernel) + self.bias
         return output * self.lrmul
 
 
@@ -73,10 +74,11 @@ class Conv2DEQL(Layer):
             name='bias'
         )
         fan_in = self.kernel_size * self.kernel_size * self.in_channels
-        self.scale = tf.cast(tf.sqrt(self.gain/fan_in), dtype='float16')
+        self.scale = tf.sqrt(self.gain/fan_in)
 
     def call(self, inputs):
-        output = tf.nn.conv2d(inputs, self.scale * self.kernel, strides=1, padding="SAME") + self.bias
+        scale = tf.cast(self.scale, self.kernel.dtype)
+        output = tf.nn.conv2d(inputs, scale * self.kernel, strides=1, padding="SAME") + self.bias
         return output
 
 
@@ -125,7 +127,7 @@ class NoiseModulation(Layer):
         self.bias = self.add_weight(name='bias', shape=[input_shape[3]], initializer='zeros', trainable=True)
 
     def call(self, inputs, **kwargs):
-        noise = tf.random.normal(shape=[tf.shape(inputs)[0], inputs.shape[1], inputs.shape[2], 1], dtype='float16')
+        noise = tf.random.normal(shape=[tf.shape(inputs)[0], inputs.shape[1], inputs.shape[2], 1], dtype=self.kernel.dtype)
         kernel = tf.reshape(self.kernel, [1, 1, 1, -1])
         bias = tf.reshape(self.bias, [1, 1, 1, -1])
         output = inputs + (kernel * noise + bias)

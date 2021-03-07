@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import mixed_precision
-from tensorflow.keras import backend
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Flatten
@@ -26,11 +25,12 @@ class StyleGANDiscriminatorConstructor:
         # Other fields.
         self.adam_params = network_config['adam_params']
         self.loss_type = network_config['loss_type']
+        self.use_mixed_precision = network_config['use_mixed_precision'] == "True"
         self.relu_slope = 0.20
 
     def run(self):
-        policy = mixed_precision.experimental.Policy('mixed_float16')
-        mixed_precision.experimental.set_policy(policy)
+        # 0. Set precision policy (float16 / float32).
+        self._set_precision_policy()
         # 1. Construct initial block.
         input_layer, x, y = self._construct_initial_block()
         # 2. Add intermediate blocks.
@@ -129,4 +129,14 @@ class StyleGANDiscriminatorConstructor:
 
     def _compute_n_filters_at_stage(self, stage):
         return np.minimum(int(self.n_base_filters / (2 ** (self.n_blocks - stage + 1))), self.n_max_filters)
+
+    def _set_precision_policy(self):
+        if self.use_mixed_precision:
+            policy = mixed_precision.experimental.Policy('mixed_float16')
+            mixed_precision.experimental.set_policy(policy)
+        else:
+            policy = mixed_precision.experimental.Policy('float32')
+            mixed_precision.experimental.set_policy(policy)
+
+
 

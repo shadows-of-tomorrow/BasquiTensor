@@ -2,10 +2,11 @@
   "network_parameters":
   {
     "use_checkpoint": "False",
+    "use_mixed_precision": "True",
     "model": "StyleGAN",
-    "loss_type": "wasserstein",
-    "latent_dist": "gaussian",
-    "output_res": 16,
+    "loss_type": "vanilla",
+    "latent_dist": "ball",
+    "output_res": 256,
     "latent_size": 512,
     "n_base_filters": 2048,
     "n_max_filters": 512,
@@ -16,12 +17,12 @@
   {
     "monitor_fid": "False",
     "generator_smoothing": 0.999,
-    "n_batches": [32],
+    "n_batches": [16],
     "n_images": [30000000]
   },
   "directories":
   {
     "input": "io/input/images/bob_ross_fan",
-    "output": "io/output/training/bob_ross_fan_16x16"
+    "output": "io/output/training/bob_ross_fan_256x256"
   }
 }

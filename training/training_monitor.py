@@ -128,7 +128,6 @@ class TrainingMonitor:
         message = f"loss_type:{discriminator.loss_type},"
         message += f"ada_target:{discriminator.ada_target},"
         message += f"ada_smoothing:{discriminator.ada_smoothing},"
-        message += f"n_grad_acc_steps:{discriminator.n_grad_acc_steps},"
         message += f"latent_dist:{generator.latent_dist},\n"
         self._write_message_to_file(file_dir, message)
 

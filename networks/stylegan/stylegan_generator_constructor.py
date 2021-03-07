@@ -30,12 +30,13 @@ class StyleGANGeneratorConstructor:
         self.n_mapping_layers = network_config['stylegan_params']['n_mapping_layers']
         self.adam_params = network_config['adam_params']
         self.loss_type = network_config['loss_type']
+        self.use_mixed_precision = network_config['use_mixed_precision']
         self.relu_slope = 0.20
 
     def run(self):
+        # 0. Set precision policy (float16 / float32).
+        self._set_precision_policy()
         # 1. Construct mapping network.
-        policy = mixed_precision.experimental.Policy('mixed_float16')
-        mixed_precision.experimental.set_policy(policy)
         z_latent, w_latent = self._construct_mapping_network()
         # 3. Construct initial block.
         x = self._construct_initial_block(w_latent)
@@ -123,3 +124,11 @@ class StyleGANGeneratorConstructor:
 
     def _compute_filters_at_stage(self, stage):
         return np.minimum(int(self.n_base_filters / (2.0 ** stage)), self.n_max_filters)
+
+    def _set_precision_policy(self):
+        if self.use_mixed_precision:
+            policy = mixed_precision.experimental.Policy('mixed_float16')
+            mixed_precision.experimental.set_policy(policy)
+        else:
+            policy = mixed_precision.experimental.Policy('float32')
+            mixed_precision.experimental.set_policy(policy)

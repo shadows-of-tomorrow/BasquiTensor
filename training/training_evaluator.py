@@ -122,7 +122,7 @@ class TrainingEvaluator:
 
 
 if __name__ == "__main__":
-    name = "bob_ross_fan_16x16"
+    name = "bob_ross_fan_256x256"
     dir_train = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'training', name)
     evaluator = TrainingEvaluator(dir_train)
     evaluator.plot_training_progress()
