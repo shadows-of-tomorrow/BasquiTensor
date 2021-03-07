@@ -7,7 +7,7 @@ class TrainingEvaluator:
 
     def __init__(self, dir_train):
         self.dir_train = dir_train
-        self.loss_burn_in = 1
+        self.loss_burn_in = 2
         self.fid_burn_in = 0
         self.d_loss_total = 'd_loss_total'
         self.d_loss_real = 'd_loss_real'
@@ -19,7 +19,7 @@ class TrainingEvaluator:
         self.memory = 'memory'
         self.ada_target = 'd_ada_target'
         self.p_augment = 'p_augment'
-        self.scale_type = "square_root"
+        self.scale_type = "None"
 
     def plot_training_progress(self):
         loss_dict = self._read_txt_file(self.dir_train, 'loss.txt')
@@ -122,7 +122,7 @@ class TrainingEvaluator:
 
 
 if __name__ == "__main__":
-    name = "bob_ross_256x256"
+    name = "bob_ross_fan_16x16"
     dir_train = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'training', name)
     evaluator = TrainingEvaluator(dir_train)
     evaluator.plot_training_progress()

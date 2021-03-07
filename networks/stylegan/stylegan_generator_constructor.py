@@ -1,5 +1,7 @@
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras import backend
+from tensorflow.keras import mixed_precision
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import LeakyReLU
@@ -32,7 +34,8 @@ class StyleGANGeneratorConstructor:
 
     def run(self):
         # 1. Construct mapping network.
-        backend.set_floatx('float32')
+        policy = mixed_precision.experimental.Policy('mixed_float16')
+        mixed_precision.experimental.set_policy(policy)
         z_latent, w_latent = self._construct_mapping_network()
         # 3. Construct initial block.
         x = self._construct_initial_block(w_latent)
@@ -43,6 +46,7 @@ class StyleGANGeneratorConstructor:
             y = UpSampling2D()(y)
             y = self._add_to_rgb(x, y)
         # 5. Construct and compile generator.
+        y = tf.cast(y, dtype='float32')
         generator = StyleGANGenerator(z_latent, y)
         generator.loss_type = self.loss_type
         generator.latent_dist = self.latent_dist

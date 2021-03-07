@@ -1,4 +1,6 @@
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras import mixed_precision
 from tensorflow.keras import backend
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input
@@ -27,8 +29,9 @@ class StyleGANDiscriminatorConstructor:
         self.relu_slope = 0.20
 
     def run(self):
+        policy = mixed_precision.experimental.Policy('mixed_float16')
+        mixed_precision.experimental.set_policy(policy)
         # 1. Construct initial block.
-        backend.set_floatx('float32')
         input_layer, x, y = self._construct_initial_block()
         # 2. Add intermediate blocks.
         for stage in range(2, self.n_blocks):
@@ -36,6 +39,7 @@ class StyleGANDiscriminatorConstructor:
         # 3. Add terminal block.
         output_layer = self._add_terminal_block(x)
         # 4. Construct and compile discriminator.
+        output_layer = tf.cast(output_layer, 'float32')
         discriminator = StyleGANDiscriminator(input_layer, output_layer)
         discriminator.loss_type = self.loss_type
         self._compile_model(discriminator)

@@ -35,9 +35,8 @@ class DenseEQL(Layer):
             name='bias'
         )
         fan_in = self.in_channels
-        self.scale = tf.sqrt(self.gain/fan_in)
+        self.scale = tf.cast(tf.sqrt(self.gain/fan_in), dtype='float16')
 
-    @tf.function
     def call(self, inputs):
         output = tf.matmul(inputs, self.scale * self.kernel) + self.bias
         return output * self.lrmul
@@ -74,7 +73,7 @@ class Conv2DEQL(Layer):
             name='bias'
         )
         fan_in = self.kernel_size * self.kernel_size * self.in_channels
-        self.scale = tf.sqrt(self.gain/fan_in)
+        self.scale = tf.cast(tf.sqrt(self.gain/fan_in), dtype='float16')
 
     def call(self, inputs):
         output = tf.nn.conv2d(inputs, self.scale * self.kernel, strides=1, padding="SAME") + self.bias
@@ -90,7 +89,8 @@ class AdaptiveInstanceModulation(Layer):
         assert len(inputs) == 2
         x_norm = self._instance_normalization(inputs[0])
         ys, yb = self._reshape_dense(inputs[1])
-        return x_norm + (ys * x_norm + yb)
+        output = x_norm + (ys * x_norm + yb)
+        return output
 
     @staticmethod
     def _reshape_dense(y):
@@ -101,8 +101,10 @@ class AdaptiveInstanceModulation(Layer):
 
     @staticmethod
     def _instance_normalization(x):
-        x -= backend.mean(x, axis=[1, 2], keepdims=True)
-        x *= (1.0 / backend.sqrt(backend.mean(backend.square(x), axis=[1, 2], keepdims=True) + 1e-8))
+        x_mean = backend.mean(x, axis=[1, 2], keepdims=True)
+        x -= x_mean
+        x_std = backend.sqrt(backend.mean(backend.square(x), axis=[1, 2], keepdims=True) + 1e-4)
+        x *= (1.0 / x_std)
         return x
 
 
@@ -123,7 +125,7 @@ class NoiseModulation(Layer):
         self.bias = self.add_weight(name='bias', shape=[input_shape[3]], initializer='zeros', trainable=True)
 
     def call(self, inputs, **kwargs):
-        noise = tf.random.normal(shape=[tf.shape(inputs)[0], inputs.shape[1], inputs.shape[2], 1], dtype='float32')
+        noise = tf.random.normal(shape=[tf.shape(inputs)[0], inputs.shape[1], inputs.shape[2], 1], dtype='float16')
         kernel = tf.reshape(self.kernel, [1, 1, 1, -1])
         bias = tf.reshape(self.bias, [1, 1, 1, -1])
         output = inputs + (kernel * noise + bias)
@@ -150,7 +152,8 @@ class Constant(Layer):
         self.kernel = self.add_weight(name='kernel', shape=self.shape, initializer=self.initializer, trainable=True)
 
     def call(self, inputs, **kwargs):
-        return tf.tile(self.kernel, [tf.shape(inputs)[0], 1, 1, 1])
+        output = tf.tile(self.kernel, [tf.shape(inputs)[0], 1, 1, 1])
+        return output
 
 
 class PixelNormalization(Layer):
