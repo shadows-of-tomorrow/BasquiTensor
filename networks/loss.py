@@ -89,7 +89,7 @@ def discriminator_wasserstein_loss(discriminator, x_real, x_fake, batch_size, us
     return loss_dict, y_real
 
 
-def r1_gradient_penalty(discriminator, x_real, r1gp_weight=10.0):
+def r1_gradient_penalty(discriminator, x_real, r1gp_weight=0.10):
     with tf.GradientTape() as tape:
         tape.watch(x_real)
         y_sum = tf.reduce_sum(discriminator(x_real, training=True))

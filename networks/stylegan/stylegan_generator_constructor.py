@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.keras import backend
 from tensorflow.keras import mixed_precision
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Add
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import UpSampling2D
@@ -35,7 +36,7 @@ class StyleGANGeneratorConstructor:
 
     def run(self):
         # 0. Set precision policy (float16 / float32).
-        self._set_precision_policy()
+        self._set_precision_policy(1)
         # 1. Construct mapping network.
         z_latent, w_latent = self._construct_mapping_network()
         # 3. Construct initial block.
@@ -43,6 +44,7 @@ class StyleGANGeneratorConstructor:
         y = self._add_to_rgb(x, None)
         # 4. Construct and add next blocks.
         for stage in range(2, self.n_blocks + 1):
+            self._set_precision_policy(stage)
             x = self._add_next_block(x, w_latent, stage)
             y = UpSampling2D()(y)
             y = self._add_to_rgb(x, y)
@@ -110,12 +112,12 @@ class StyleGANGeneratorConstructor:
     def _add_to_rgb(x, y):
         x = Conv2DEQL(n_channels=3, kernel_size=1)(x)
         if y is not None:
-            x += y
+            x = Add()([x, y])
         return x
 
     def _add_mapping_layers(self, x):
         for k in range(self.n_mapping_layers):
-            x = DenseEQL(units=self.latent_size, lrmul=0.01)(x)
+            x = DenseEQL(units=self.latent_size, lrmul=1.0)(x)
             x = LeakyReLU(0.20)(x)
         return x
 
@@ -125,8 +127,8 @@ class StyleGANGeneratorConstructor:
     def _compute_filters_at_stage(self, stage):
         return np.minimum(int(self.n_base_filters / (2.0 ** stage)), self.n_max_filters)
 
-    def _set_precision_policy(self):
-        if self.use_mixed_precision:
+    def _set_precision_policy(self, stage):
+        if self.use_mixed_precision and stage >= 4:
             policy = mixed_precision.experimental.Policy('mixed_float16')
             mixed_precision.experimental.set_policy(policy)
         else:

@@ -1,33 +1,5 @@
 import numpy as np
-from networks.layers import WeightedSum
-from tensorflow.keras import backend
-from tensorflow.keras.models import clone_model
 
-
-# ----------------------------- Network Modification -------------------------------------------------------------------
-
-def update_fade_in(models, step, n_steps):
-    alpha = step / float(n_steps - 1)
-    for model in models:
-        for layer in model.layers:
-            if isinstance(layer, WeightedSum):
-                backend.set_value(layer.alpha, alpha)
-
-
-def update_smoothed_weights(smoothed_model, training_model, alpha=0.999):
-    smoothed_weights = smoothed_model.get_weights()
-    training_weights = training_model.get_weights()
-    for k in range(len(smoothed_weights)):
-        smoothed_weights[k] = alpha * smoothed_weights[k] + (1.0 - alpha) * training_weights[k]
-    smoothed_model.set_weights(smoothed_weights)
-
-
-def clone_subclassed_model(model):
-    cloned_model = clone_model(model)
-    return cloned_model
-
-
-# ----------------------------- Latent Vector Generation ---------------------------------------------------------------
 
 def generate_latent_vectors(latent_dim, n_samples, distribution="gaussian"):
     if distribution == "gaussian":
@@ -56,9 +28,6 @@ def generate_latent_vectors_bernoulli(latent_dim, n_samples):
     z = np.random.binomial(1, 0.50, size=(n_samples, latent_dim))
     return z.astype('float32')
 
-
-# ----------------------------- Image Generation ----------------------------------------------------------------------
-
 def generate_real_images(image_processor, n_samples, shape, transform_type="old_to_new"):
     x_real = image_processor.sample_numpy_array(n_samples)
     if transform_type is not None:
@@ -85,5 +54,3 @@ def generate_fake_images_from_latents(z_latent, image_processor, generator, shap
     if x_fake.shape[1] != shape[0]:
         x_fake = image_processor.resize_numpy_array(x_fake, shape)
     return x_fake
-
-# ----------------------------------------------------------------------------------------------------------------------

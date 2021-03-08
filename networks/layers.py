@@ -105,7 +105,7 @@ class AdaptiveInstanceModulation(Layer):
     def _instance_normalization(x):
         x_mean = backend.mean(x, axis=[1, 2], keepdims=True)
         x -= x_mean
-        x_std = backend.sqrt(backend.mean(backend.square(x), axis=[1, 2], keepdims=True) + 1e-4)
+        x_std = backend.sqrt(backend.mean(backend.square(x), axis=[1, 2], keepdims=True) + 1e-8)
         x *= (1.0 / x_std)
         return x
 

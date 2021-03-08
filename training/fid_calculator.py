@@ -1,7 +1,6 @@
 import numpy as np
 import scipy as sp
-from networks.utils import generate_real_images
-from networks.utils import generate_fake_images
+from networks.sampling import generate_real_images, generate_fake_images
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 
 

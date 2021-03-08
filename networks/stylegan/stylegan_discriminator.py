@@ -1,7 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from networks.utils import generate_fake_images
-from networks.utils import generate_real_images
+from networks.sampling import generate_real_images, generate_fake_images
 from networks.loss import discriminator_loss
 
 
@@ -11,7 +10,7 @@ class StyleGANDiscriminator(Model):
         super(StyleGANDiscriminator, self).__init__(*args, **kwargs)
         self.step_tracker = 1
         self.loss_type = "wasserstein"
-        self.ada_target = -1.00
+        self.ada_target = 0.00
         self.ada_smoothing = 0.999
 
     def compile(self, optimizer):

@@ -1,9 +1,7 @@
 import time
 import psutil
-from networks.utils import update_fade_in
-from networks.utils import update_smoothed_weights
-from networks.utils import generate_latent_vectors
-from networks.utils import clone_subclassed_model
+from networks.processing import update_fade_in, update_smoothed_weights, clone_subclassed_model
+from networks.sampling import generate_latent_vectors
 from training.training_monitor import TrainingMonitor
 from processing.augmentation.image_augmenter import ImageAugmenter
 

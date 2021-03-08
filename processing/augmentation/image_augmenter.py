@@ -13,7 +13,7 @@ class ImageAugmenter:
         self.p_augment_target = 0.60
         self.p_augment_threshold = 0.01
         self.p_augment_max = 0.80
-        self.n_adjust_imgs = 50000
+        self.n_adjust_imgs = 500000
         # Construct image transformers.
         self.geometry_transformer = GeometryTransformer(self.p_augment)
         self.color_transformer = ColorTransformer(self.p_augment)

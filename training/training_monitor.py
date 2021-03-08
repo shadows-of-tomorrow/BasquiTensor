@@ -1,8 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from networks.utils import generate_fake_images
-from networks.utils import generate_real_images
+from networks.sampling import generate_real_images, generate_fake_images
 from training.fid_calculator import FIDCalculator
 
 
@@ -19,6 +18,7 @@ class TrainingMonitor:
         self.fid_store_ticks = 100
         self.plot_store_ticks = 100
         self.network_store_ticks = 100
+        self.weight_hist_store_ticks = 100
 
     def run(self, discriminator, generator, generator_smoothed, res, fade_in, n_step, done, **loss_dict):
         if n_step % self.loss_store_ticks == 0 or done:
@@ -29,6 +29,8 @@ class TrainingMonitor:
             self.store_plots(generator_smoothed, n_step, fade_in)
         if n_step % self.network_store_ticks == 0 or done:
             self.store_networks(discriminator, generator, generator_smoothed, fade_in)
+        if n_step % self.weight_hist_store_ticks == 0 or done:
+            self.store_weight_histograms(discriminator, generator, generator_smoothed, fade_in, n_step)
 
     def store_fid(self, generator, res, fade_in):
         if self.monitor_fid:
@@ -131,6 +133,39 @@ class TrainingMonitor:
         message += f"latent_dist:{generator.latent_dist},\n"
         self._write_message_to_file(file_dir, message)
 
+    def store_weight_histograms(self, discriminator, generator, generator_smoothed, fade_in, n_step):
+        # 0. Get (subsample of) network weights.
+        discriminator_weights = self._weights_to_list(discriminator.weights)
+        generator_weights = self._weights_to_list(generator.weights)
+        generator_s_weights = self._weights_to_list(generator_smoothed.weights)
+        # 1. Extract relevant fields.
+        dir_out = os.path.join(self.image_processor.dir_out, 'weights')
+        res = generator.output.shape[1]
+        # 2. Create output directories (if these do not exist).
+        if fade_in:
+            file_dir = os.path.join(dir_out, f'{res}x{res}_fade_in')
+        else:
+            file_dir = os.path.join(dir_out, f'{res}x{res}_tuned')
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
+        # 3. Construct and store histograms.
+        plt.suptitle("Network Weights")
+        fig = plt.subplot(3, 1, 1)
+        plt.hist(discriminator_weights, bins=100)
+        fig.set_xticks([])
+        fig.set_yticks([])
+        fig = plt.subplot(3, 1, 2)
+        plt.hist(generator_weights, bins=100)
+        fig.set_xticks([])
+        fig.set_yticks([])
+        fig = plt.subplot(3, 1, 3)
+        plt.hist(generator_s_weights, bins=100)
+        fig.set_xticks([])
+        fig.set_yticks([])
+        plt.savefig(os.path.join(file_dir, f"weight_hist_{n_step}.png"))
+        plt.tight_layout()
+        plt.close()
+
     def _write_message_to_file(self, file_dir, message):
         if os.path.exists(file_dir):
             mode = 'a'
@@ -139,3 +174,10 @@ class TrainingMonitor:
         with open(file_dir, mode) as file:
             file.write(message)
             file.close()
+
+    def _weights_to_list(self, weights):
+        weights = [x.numpy().ravel().tolist() for x in weights]
+        weights = [x for sub_list in weights for x in sub_list]
+        weights = np.random.choice(weights, size=10000)
+        return weights
+

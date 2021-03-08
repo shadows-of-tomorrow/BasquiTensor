@@ -3,7 +3,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import unittest
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from networks.utils import generate_real_images
+from networks.sampling import generate_real_images
 from processing.image_processor import ImageProcessor
 from processing.augmentation.image_augmenter import ImageAugmenter
 

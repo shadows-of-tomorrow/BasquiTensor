@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import mixed_precision
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Add
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import LeakyReLU
@@ -30,11 +31,12 @@ class StyleGANDiscriminatorConstructor:
 
     def run(self):
         # 0. Set precision policy (float16 / float32).
-        self._set_precision_policy()
+        self._set_precision_policy(1)
         # 1. Construct initial block.
         input_layer, x, y = self._construct_initial_block()
         # 2. Add intermediate blocks.
         for stage in range(2, self.n_blocks):
+            self._set_precision_policy(stage)
             x, y = self._add_intermediate_block(x, y, stage)
         # 3. Add terminal block.
         output_layer = self._add_terminal_block(x)
@@ -59,7 +61,7 @@ class StyleGANDiscriminatorConstructor:
         x = self._add_convolutional_layers(x, n_filters_2, 3, 1)
         x = self._add_downsampling_layer(x, None, False)
         # 4. Combine x and y to form block.
-        x = (x + y) / np.sqrt(2.0)
+        x = Add()([x/np.sqrt(2.0), y/np.sqrt(2.0)])
         return input_layer, x, y
 
     def _add_intermediate_block(self, x, y, stage):
@@ -72,7 +74,7 @@ class StyleGANDiscriminatorConstructor:
         x = self._add_convolutional_layers(x, n_filters_2, 3, 1)
         x = self._add_downsampling_layer(x, None, False)
         # 3. Combine x and y to form block.
-        x = (x + y) / np.sqrt(2.0)
+        x = Add()([x/np.sqrt(2.0), y/np.sqrt(2.0)])
         return x, y
 
     def _add_terminal_block(self, x):
@@ -130,8 +132,8 @@ class StyleGANDiscriminatorConstructor:
     def _compute_n_filters_at_stage(self, stage):
         return np.minimum(int(self.n_base_filters / (2 ** (self.n_blocks - stage + 1))), self.n_max_filters)
 
-    def _set_precision_policy(self):
-        if self.use_mixed_precision:
+    def _set_precision_policy(self, stage):
+        if self.use_mixed_precision and stage >= 4:
             policy = mixed_precision.experimental.Policy('mixed_float16')
             mixed_precision.experimental.set_policy(policy)
         else:

@@ -2,29 +2,9 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model
-from networks.utils import generate_latent_vectors_gaussian
-from networks.utils import generate_fake_images_from_latents
-from networks.layers import Constant
-from networks.layers import DenseEQL
-from networks.layers import Conv2DEQL
-from networks.layers import NoiseModulation
-from networks.layers import MinibatchStDev
-from networks.layers import AdaptiveInstanceModulation
-from networks.stylegan.stylegan_generator import StyleGANGenerator
-from networks.stylegan.stylegan_discriminator import StyleGANDiscriminator
+from networks.processing import load_model_from_disk
+from networks.sampling import generate_latent_vectors_gaussian, generate_fake_images_from_latents
 from processing.image_processor import ImageProcessor
-
-CUSTOM_OBJECTS = {
-    'StyleGANDiscriminator': StyleGANDiscriminator,
-    'StyleGANGenerator': StyleGANGenerator,
-    'DenseEQL': DenseEQL,
-    'Conv2DEQL': Conv2DEQL,
-    "MinibatchStDev": MinibatchStDev,
-    "Constant": Constant,
-    "NoiseModulation": NoiseModulation,
-    "AdaptiveInstanceModulation": AdaptiveInstanceModulation
-}
 
 
 class Painter:
@@ -44,7 +24,7 @@ class Painter:
 
     def _load_generator(self, gen_name):
         dir_gen = os.path.join(self.dir_in, gen_name)
-        return load_model(dir_gen, CUSTOM_OBJECTS)
+        return load_model_from_disk(dir_gen)
 
     def _store_paintings(self, paintings):
         for k in range(paintings.shape[0]):
