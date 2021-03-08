@@ -2,15 +2,15 @@
   "network_parameters":
   {
     "use_checkpoint": "False",
-    "use_mixed_precision": "True",
+    "use_mixed_precision": "False",
     "model": "StyleGAN",
-    "loss_type": "vanilla",
-    "latent_dist": "ball",
+    "loss_type": "wasserstein",
+    "latent_dist": "gaussian",
     "output_res": 256,
     "latent_size": 512,
     "n_base_filters": 2048,
     "n_max_filters": 512,
-    "adam_params": {"lr": 0.0001, "beta_1": 0.00, "beta_2": 0.90, "epsilon": 10e-8},
+    "adam_params": {"lr": 0.0020, "beta_1": 0.00, "beta_2": 0.99, "epsilon": 10e-8},
     "stylegan_params": {"n_mapping_layers": 2}
   },
   "training_parameters":

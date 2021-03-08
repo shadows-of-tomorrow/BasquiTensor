@@ -3,7 +3,6 @@ import tensorflow as tf
 from tensorflow.keras import backend
 from tensorflow.keras import mixed_precision
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers import Add
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import UpSampling2D
@@ -12,6 +11,7 @@ from networks.layers import DenseEQL
 from networks.layers import Conv2DEQL
 from networks.layers import NoiseModulation
 from networks.layers import AdaptiveInstanceModulation
+from networks.layers import PixelNormalization
 from networks.stylegan.stylegan_generator import StyleGANGenerator
 
 
@@ -31,7 +31,7 @@ class StyleGANGeneratorConstructor:
         self.n_mapping_layers = network_config['stylegan_params']['n_mapping_layers']
         self.adam_params = network_config['adam_params']
         self.loss_type = network_config['loss_type']
-        self.use_mixed_precision = network_config['use_mixed_precision']
+        self.use_mixed_precision = network_config['use_mixed_precision'] == "True"
         self.relu_slope = 0.20
 
     def run(self):
@@ -112,7 +112,7 @@ class StyleGANGeneratorConstructor:
     def _add_to_rgb(x, y):
         x = Conv2DEQL(n_channels=3, kernel_size=1)(x)
         if y is not None:
-            x = Add()([x, y])
+            x += y
         return x
 
     def _add_mapping_layers(self, x):

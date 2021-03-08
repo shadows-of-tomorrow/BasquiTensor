@@ -16,7 +16,6 @@ class Painter:
         self.image_processor = image_processor
         self.generator = self._load_generator(self.gen_name)
         self.base_shape = self.generator.output_shape[1:3]
-        self.n_int_steps = 10
 
     def paint(self, n_paintings, painting_type="basic"):
         x_fake = self._generate_paintings(self.generator, n_paintings, self.base_shape, painting_type)
@@ -36,7 +35,7 @@ class Painter:
         if painting_type == "basic":
             return self._generate_basic_paintings(generator, n_paintings, shape)
         elif painting_type == "interpolated":
-            return self._generate_interpolated_paintings(generator, shape, self.n_int_steps)
+            return self._generate_interpolated_paintings(generator, shape, n_paintings)
         else:
             ValueError(f"Painting type {painting_type} not recognized.")
 

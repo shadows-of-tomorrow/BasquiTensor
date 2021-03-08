@@ -61,7 +61,7 @@ class StyleGANDiscriminatorConstructor:
         x = self._add_convolutional_layers(x, n_filters_2, 3, 1)
         x = self._add_downsampling_layer(x, None, False)
         # 4. Combine x and y to form block.
-        x = Add()([x/np.sqrt(2.0), y/np.sqrt(2.0)])
+        x = (x + y) / np.sqrt(2.0)
         return input_layer, x, y
 
     def _add_intermediate_block(self, x, y, stage):
@@ -74,7 +74,7 @@ class StyleGANDiscriminatorConstructor:
         x = self._add_convolutional_layers(x, n_filters_2, 3, 1)
         x = self._add_downsampling_layer(x, None, False)
         # 3. Combine x and y to form block.
-        x = Add()([x/np.sqrt(2.0), y/np.sqrt(2.0)])
+        x = (x + y) / np.sqrt(2.0)
         return x, y
 
     def _add_terminal_block(self, x):
