@@ -2,6 +2,7 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import numpy as np
 import matplotlib.pyplot as plt
+from utils.utils import makedir
 from networks.processing import load_model_from_disk
 from networks.sampling import generate_latent_vectors_gaussian, generate_fake_images_from_latents
 from processing.image_processor import ImageProcessor
@@ -26,8 +27,11 @@ class Painter:
         return load_model_from_disk(dir_gen)
 
     def _store_paintings(self, paintings):
+        n_folders = len(os.listdir(self.dir_out))
+        dir_path = os.path.join(self.dir_out, f"{n_folders+1}")
+        makedir(dir_path)
         for k in range(paintings.shape[0]):
-            dir_file = os.path.join(self.dir_out, f"{k + 1}.png")
+            dir_file = os.path.join(dir_path, f"{k+1}.png")
             img = np.clip(paintings[k], 0.0, 1.0)
             plt.imsave(dir_file, img)
 
@@ -53,7 +57,7 @@ class Painter:
 
 
 if __name__ == "__main__":
-    name = 'bob_ross_256.h5'
+    name = 'bob_ross_256_15.h5'
     dir_in = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'input', 'generators')
     dir_out = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'painting')
     painter = Painter(dir_in, dir_out, name, ImageProcessor())

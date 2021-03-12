@@ -1,7 +1,7 @@
 {
   "network_parameters":
   {
-    "use_checkpoint": "False",
+    "use_checkpoint": "True",
     "use_mixed_precision": "False",
     "model": "StyleGAN",
     "loss_type": "wasserstein",
