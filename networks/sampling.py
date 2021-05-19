@@ -24,9 +24,10 @@ def generate_latent_vectors_ball(latent_dim, n_samples):
     return (r * z / norm).astype('float32')
 
 
-def generate_latent_vectors_bernoulli(latent_dim, n_samples):
-    z = np.random.binomial(1, 0.50, size=(n_samples, latent_dim))
+def generate_latent_vectors_bernoulli(latent_dim, n_samples, p_draw=0.50):
+    z = np.random.binomial(1, p_draw, size=(n_samples, latent_dim))
     return z.astype('float32')
+
 
 def generate_real_images(image_processor, n_samples, shape, transform_type="old_to_new"):
     x_real = image_processor.sample_numpy_array(n_samples)

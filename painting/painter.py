@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+#os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.utils import makedir
@@ -57,8 +57,8 @@ class Painter:
 
 
 if __name__ == "__main__":
-    name = 'bob_ross_256_15.h5'
+    name = 'bob_ross_256_18.h5'
     dir_in = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'input', 'generators')
     dir_out = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'painting')
     painter = Painter(dir_in, dir_out, name, ImageProcessor())
-    painter.paint(n_paintings=10, painting_type="interpolated")
+    painter.paint(n_paintings=100, painting_type="basic")
