@@ -1,0 +1,27 @@
+{
+  "network_parameters":
+  {
+    "use_checkpoint": "False",
+    "use_mixed_precision": "False",
+    "model": "StyleGAN",
+    "loss_type": "wasserstein",
+    "latent_dist": "gaussian",
+    "output_res": 1024,
+    "latent_size": 256,
+    "n_base_filters": 2048,
+    "n_max_filters": 512,
+    "adam_params": {"lr": 0.0001, "beta_1": 0.00, "beta_2": 0.99, "epsilon": 10e-8},
+    "stylegan_params": {"n_mapping_layers": 2}
+  },
+  "training_parameters":
+  {
+    "monitor_fid": "True",
+    "n_batches": [8],
+    "n_images": [30000000]
+  },
+  "directories":
+  {
+    "input": "io/input/images/wiki_c9",
+    "output": "io/output/training/wiki_c9"
+  }
+}

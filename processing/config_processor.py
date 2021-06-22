@@ -23,7 +23,7 @@ class ConfigProcessor:
             file_dir = os.path.join(parent_dir, config['directories']['output'])
             if not os.path.exists(file_dir):
                 os.makedirs(file_dir)
-            with open(file_dir + '/config.json', 'w') as file:
+            with open(file_dir + '/train_config.json', 'w') as file:
                 json.dump(config, file, indent=4)
 
     @staticmethod

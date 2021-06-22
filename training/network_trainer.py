@@ -1,7 +1,10 @@
 import time
 import psutil
-from networks.processing import update_fade_in, update_smoothed_weights, clone_subclassed_model
-from networks.sampling import generate_latent_vectors
+import tensorflow as tf
+from networks.utils.sampling import generate_latent_vectors
+from networks.utils.network_updating import update_fade_in
+from networks.utils.network_updating import update_smoothed_weights
+from networks.utils.network_updating import clone_subclassed_model
 from training.training_monitor import TrainingMonitor
 from processing.augmentation.image_augmenter import ImageAugmenter
 
@@ -18,37 +21,16 @@ class NetworkTrainer:
         self.start_time = time.time()
 
     def run(self, networks):
-        # 0. Unpack networks.
-        discriminators = networks['discriminators']
-        generators = networks['generators']
-        if 'generators_smoothed' in networks:
-            generators_smoothed = networks['generators_smoothed']
+        discriminator, generator, generator_sm = self._unpack_networks(networks)
+        print(f"Training networks at {generator.output.shape[1]}x{generator.output.shape[1]} resolution...")
+        self._train_epochs(generator, discriminator, self.n_images[0], self.n_batches[0], False, generator_sm)
+
+    @staticmethod
+    def _unpack_networks(networks):
+        if 'generator_smoothed' in networks:
+            return networks['discriminator'], networks['generator'], networks['generator_smoothed']
         else:
-            generators_smoothed = None
-        assert len(discriminators) == len(generators)
-        assert len(discriminators) == len(self.n_batches) == len(self.n_images)
-        # 1. Extract initial models.
-        discriminator = discriminators[0][0]
-        generator = generators[0][0]
-        if generators_smoothed is not None:
-            smoothed_generator = generators_smoothed[0][0]
-        else:
-            smoothed_generator = None
-        # 2. Train initial models.
-        res = generator.output.shape[1]
-        print(f"Training networks at {res}x{res} resolution...")
-        self._train_epochs(generator, discriminator, self.n_images[0], self.n_batches[0], False, smoothed_generator)
-        # 3. Train models at each growth stage.
-        for k in range(1, len(discriminators)):
-            # 3.1 Get normal and fade in models.
-            [dis_tuning, dis_fade_in] = discriminators[k]
-            [gen_tuning, gen_fade_in] = generators[k]
-            # 3.2 Train fade-in models.
-            res = gen_tuning.output.shape[1]
-            print(f"Training networks at {res}x{res} resolution...")
-            self._train_epochs(gen_fade_in, dis_fade_in, self.n_images[k], self.n_batches[k], True, None)
-            # 3.3 Train tuning models.
-            self._train_epochs(gen_tuning, dis_tuning, self.n_images[k], self.n_batches[k], False, None)
+            return networks['discriminator'], networks['generator'], None
 
     def _train_epochs(self, generator, discriminator, n_images, n_batch, fade_in, smoothed_generator):
         # 1. Compute number of training steps.
@@ -56,7 +38,6 @@ class NetworkTrainer:
         # 2. Get shape of image.
         latent_dim = generator.input.shape[1]
         shape = tuple(generator.output.shape[1:-1].as_list())
-        res = shape[0]
         # 3. Clone generator.
         if smoothed_generator is None:
             smoothed_generator = clone_subclassed_model(generator)
@@ -81,4 +62,5 @@ class NetworkTrainer:
             loss_dict = {**d_loss, **g_loss, **{'time': f"{time_loss}"}, **{'memory': f"{mem_loss}"}}
             # 3.7 Monitor training process.
             done = k == (n_steps-1)
-            self.training_monitor.run(discriminator, generator, smoothed_generator, res, fade_in, k, done, **loss_dict)
+            with tf.init_scope():
+                self.training_monitor.run(discriminator, generator, smoothed_generator, shape[0], fade_in, k, done, **loss_dict)

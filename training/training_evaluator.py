@@ -7,7 +7,7 @@ class TrainingEvaluator:
 
     def __init__(self, dir_train):
         self.dir_train = dir_train
-        self.loss_burn_in = 1
+        self.loss_burn_in = 10
         self.fid_burn_in = 0
         self.d_loss_total = 'd_loss_total'
         self.d_loss_real = 'd_loss_real'
@@ -23,12 +23,12 @@ class TrainingEvaluator:
 
     def plot_training_progress(self):
         loss_dict = self._read_txt_file(self.dir_train, 'loss.txt')
-        #fid_dict = self._read_txt_file(self.dir_train, 'fid.txt')
+        fid_dict = self._read_txt_file(self.dir_train, 'fid.txt')
         self._plot_network_losses(loss_dict)
         self._plot_gradient_penalty(loss_dict)
         self._plot_batch_processing_time(loss_dict)
         self._plot_image_augmentation(loss_dict)
-        #self._plot_ffid(fid_dict)
+        self._plot_ffid(fid_dict)
         plt.show()
 
     def _plot_ffid(self, fid_dict):
@@ -122,7 +122,7 @@ class TrainingEvaluator:
 
 
 if __name__ == "__main__":
-    name = "bob_ross_fan_256x256"
+    name = "wiki_c9"
     dir_train = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'io', 'output', 'training', name)
     evaluator = TrainingEvaluator(dir_train)
     evaluator.plot_training_progress()

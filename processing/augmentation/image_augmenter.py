@@ -35,8 +35,8 @@ class ImageAugmenter:
         self.corruption_transformer.p_augment = p_augment_new
 
     def _compute_augmentation_probability(self, rt, n_shown_images):
-        p_augment = self.p_augment + (n_shown_images/self.n_adjust_imgs) * np.sign(rt - self.p_augment_target)
-        p_augment = np.clip(p_augment, 0.0, self.p_augment_max)
+        p_augment = self.p_augment + (n_shown_images/self.n_adjust_imgs) * tf.sign(rt - self.p_augment_target)
+        p_augment = tf.clip_by_value(p_augment, 0.0, self.p_augment_max)
         return p_augment
 
     def _transform_tensors(self, x, batch_size, width, height, channels):

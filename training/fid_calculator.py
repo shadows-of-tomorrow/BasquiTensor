@@ -1,12 +1,13 @@
 import numpy as np
 import scipy as sp
-from networks.sampling import generate_real_images, generate_fake_images
+import tensorflow as tf
+from networks.utils.sampling import generate_real_images, generate_fake_images
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 
 
 class FIDCalculator:
 
-    def __init__(self, image_processor, fid_res=128, n_fake_samples=128, n_real_samples=10000, n_activations=2048):
+    def __init__(self, image_processor, fid_res=128, n_fake_samples=128, n_real_samples=5000, n_activations=2048):
         print(f"Constructing FID calculator...")
         self.image_processor = image_processor
         self.n_fake_samples = n_fake_samples
@@ -25,7 +26,7 @@ class FIDCalculator:
             generator,
             self.n_fake_samples,
             self.img_shape,
-            transform_type="min_max_to_zero_one"
+            transform_type="min_max_to_zero_eager"
         )
         # 2. Compute activations on fake images.
         a_fake = np.transpose(self.inception_network.predict(x_fake))

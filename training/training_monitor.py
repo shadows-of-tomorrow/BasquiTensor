@@ -1,7 +1,9 @@
 import os
 import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
-from networks.sampling import generate_real_images, generate_fake_images
+from networks.utils.sampling import generate_real_images, generate_fake_images
 from training.fid_calculator import FIDCalculator
 
 
@@ -69,7 +71,7 @@ class TrainingMonitor:
             generator=generator,
             n_samples=n_fake,
             shape=(res, res),
-            transform_type="min_max_to_zero_one"
+            transform_type="min_max_to_zero_one_eager"
         )
         x_fake = [np.clip(x_fake[k], 0.0, 1.0) for k in range(len(x_fake))]
         # 3. Generate and scale real images.
@@ -107,7 +109,7 @@ class TrainingMonitor:
         file_name = os.path.join(file_dir, '%s.png' % step)
         plt.suptitle("Fake / Real")
         plt.savefig(file_name)
-        plt.close()
+        plt.close('all')
 
     def store_networks(self, discriminator, generator, generator_smoothed, fade_in):
         """ Stores Keras networks for later use. """
@@ -122,9 +124,21 @@ class TrainingMonitor:
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
         # 3. Store networks.
-        discriminator.save(os.path.join(file_dir, f"discriminator.h5"))
-        generator.save(os.path.join(file_dir, f"generator.h5"))
-        generator_smoothed.save(os.path.join(file_dir, "generator_smoothed.h5"))
+        discriminator.save(
+            filepath=os.path.join(file_dir, f"discriminator.h5"),
+            save_format='h5',
+            include_optimizer=True
+        )
+        generator.save(
+            filepath=os.path.join(file_dir, f"generator.h5"),
+            save_format='h5',
+            include_optimizer=True
+        )
+        generator_smoothed.save(
+            filepath=os.path.join(file_dir, "generator_smoothed.h5"),
+            save_format='h5',
+            include_optimizer=True
+        )
         # 4. Write additional network fields to file.
         file_dir = file_dir + '/fields.txt'
         message = f"loss_type:{discriminator.loss_type},"
